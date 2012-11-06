@@ -1,3 +1,3 @@
 # UUID                                  	Group Name
 #
-bbpe8rjjv7av0izip8lgeswvq0nin6s7v7l5s6sw	technology.lyo
+ldap:cn=technology.lyo,ou=group,dc=eclipse,dc=org	ldap/technology.lyo
