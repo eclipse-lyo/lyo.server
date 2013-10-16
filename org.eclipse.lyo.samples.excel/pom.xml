@@ -133,6 +133,13 @@
         	<type>jar</type>
         	<scope>compile</scope>
         </dependency>
+        <dependency>
+        	<groupId>org.eclipse.lyo.core.query</groupId>
+        	<artifactId>oslc-query</artifactId>
+        	<version>[1.1,)</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
