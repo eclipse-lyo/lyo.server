@@ -13,7 +13,7 @@
 *
 *     Samuel Padgett - initial implementation
 *******************************************************************************/
-package org.eclipse.lyo.server.hudson.auto.resource;
+package org.eclipse.lyo.server.jenkins.auto.resource;
 
 import org.eclipse.lyo.oslc4j.core.annotation.OslcName;
 import org.eclipse.lyo.oslc4j.core.annotation.OslcNamespace;

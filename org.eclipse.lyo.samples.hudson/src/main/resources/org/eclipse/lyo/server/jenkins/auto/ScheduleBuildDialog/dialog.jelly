@@ -1,0 +1,86 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:local="local">
+<l:oslcLayout>
+	<j:set var="jobs" value="${it.items}"/>
+	<j:set var="views" value="${it.views}"/>
+	<j:set var="jobBaseUrl" value="${rootURL}/"/>
+ 
+	<form>
+	  <t:setIconSize/>
+	  <div class="dashboard">
+	
+	    <j:if test="${columnExtensions==null}">
+	        <j:invokeStatic var="columnExtensions" className="hudson.model.ListView" method="getDefaultColumns"/>
+	    </j:if>
+	
+	    <j:if test="${!empty(jobs) or !empty(views)}">
+	      <!-- the caller can inject a tab bar here -->
+	      <!-- Doesn't work, need to investigate....
+	      <d:invokeBody/>
+	      -->
+	      <!-- project list -->
+	      <table id="projectstatus" class="sortable pane bigtable"
+	             style="${showViewTabs?'margin-top:0px; border-top: none;':null}">
+	        <tr style="border-top: 0px;">
+	          <!-- Radio column -->
+	          <th></th>
+	          <j:forEach var="col" items="${columnExtensions}">
+	             <st:include page="columnHeader.jelly" it="${col}" />
+	          </j:forEach>
+	          <th>
+	            <st:nbsp/>
+	          </th>
+	        </tr>
+	
+	        <j:forEach var="v" items="${views}">
+	          <t:projectViewNested />
+	        </j:forEach>
+	        <j:forEach var="job" items="${jobs}">
+	          <j:set var="relativeLinkToJob" value="${rootURL}${job.url}"/>
+			  <tr id="job_${job.name}" class="${job.disabled?'disabledJob':null}">
+			  	<td><input name="job" value="${job.name}" type="radio"/></td>
+			    <j:forEach var="col" items="${columnExtensions}">
+			      <st:include page="column.jelly" it="${col}"/>
+			    </j:forEach>
+			    <td>
+			      <st:nbsp/>
+			    </td>
+			  </tr>
+	        </j:forEach>
+	      </table>
+	    </j:if>
+	  </div>
+	
+	  <div style="margin-top: 10px;">
+		<button onclick="ok(); return false;">OK</button>
+		<button onclick="cancel(); return false;">Cancel</button>
+	  </div>
+	</form>
+
+<script type="text/javascript" src="${rootURL}/plugin/jenkins-oslc-auto/js/dialog.js" />
+<script>
+function ok() {
+	var results = [];
+	var inputElements = document.getElementsByTagName('input');
+    for(var i=0; inputElements[i]; ++i){
+      if(inputElements[i].checked){
+           var jobName = inputElements[i].value;
+           var uri = "${rootURL}/auto/job/" + encodeURIComponent(jobName);
+           results.push({
+             'oslc:label': jobName,
+             'rdf:resource': uri
+           });
+      }
+    }
+    
+    var response = { 'oslc:results': results };
+    // Does not work in IE 7
+    respond(JSON.stringify(response));
+}
+
+function cancel() {
+	respond('{ "oslc:results": []}');
+}
+</script>
+</l:oslcLayout>
+</j:jelly>

@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2013 IBM Corporation.
+ * Copyright (c) 2013, 2014 IBM Corporation.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
- *  
+ *
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
  * and the Eclipse Distribution License is available at
  * http://www.eclipse.org/org/documents/edl-v10.php.
@@ -12,8 +12,9 @@
  * Contributors:
  *
  *     Samuel Padgett - initial implementation
+ *     Samuel Padgett - update for Jenkins
  *******************************************************************************/
-package org.eclipse.lyo.server.hudson.auto;
+package org.eclipse.lyo.server.jenkins.auto;
 
 import hudson.Extension;
 import hudson.model.ParameterValue;
@@ -75,6 +76,7 @@ import org.eclipse.lyo.oslc4j.automation.AutomationPlan;
 import org.eclipse.lyo.oslc4j.automation.AutomationRequest;
 import org.eclipse.lyo.oslc4j.automation.AutomationResult;
 import org.eclipse.lyo.oslc4j.automation.ParameterInstance;
+import org.eclipse.lyo.oslc4j.automation.Property;
 import org.eclipse.lyo.oslc4j.core.model.Compact;
 import org.eclipse.lyo.oslc4j.core.model.CreationFactory;
 import org.eclipse.lyo.oslc4j.core.model.Dialog;
@@ -84,15 +86,14 @@ import org.eclipse.lyo.oslc4j.core.model.OslcConstants;
 import org.eclipse.lyo.oslc4j.core.model.OslcMediaType;
 import org.eclipse.lyo.oslc4j.core.model.PrefixDefinition;
 import org.eclipse.lyo.oslc4j.core.model.Preview;
-import org.eclipse.lyo.oslc4j.core.model.Property;
 import org.eclipse.lyo.oslc4j.core.model.Publisher;
 import org.eclipse.lyo.oslc4j.core.model.QueryCapability;
 import org.eclipse.lyo.oslc4j.core.model.Service;
 import org.eclipse.lyo.oslc4j.core.model.ServiceProvider;
 import org.eclipse.lyo.oslc4j.utils.AcceptUtil;
-import org.eclipse.lyo.server.hudson.auto.resource.HudsonAutoConstants;
-import org.eclipse.lyo.server.hudson.auto.resource.QueryResponse;
-import org.eclipse.lyo.server.hudson.auto.resource.ResponseInfo;
+import org.eclipse.lyo.server.jenkins.auto.resource.JenkinsAutoConstants;
+import org.eclipse.lyo.server.jenkins.auto.resource.QueryResponse;
+import org.eclipse.lyo.server.jenkins.auto.resource.ResponseInfo;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
@@ -104,7 +105,7 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 
 /**
  * Hudson and Jenkins OSLC Automation Provider.
- * 
+ *
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
 @Extension
@@ -134,7 +135,7 @@ public class OslcAutomationProvider implements RootAction {
 		OslcMediaType.APPLICATION_JSON_TYPE,
 		OslcMediaType.APPLICATION_X_OSLC_COMPACT_XML_TYPE
 	};
-	
+
 	/**
 	 * All prefixes and namespaces used by this provider.
 	 */
@@ -147,8 +148,8 @@ public class OslcAutomationProvider implements RootAction {
 		prefixes.put(OslcConstants.RDFS_NAMESPACE_PREFIX, OslcConstants.RDFS_NAMESPACE);
 		prefixes.put(AutomationConstants.FOAF_NAMESPACE_PREFIX, AutomationConstants.FOAF_NAMESPACE);
 		prefixes.put(AutomationConstants.AUTOMATION_PREFIX, AutomationConstants.AUTOMATION_NAMESPACE);
-		prefixes.put(HudsonAutoConstants.PREFIX, HudsonAutoConstants.NAMESPACE);
-		
+		prefixes.put(JenkinsAutoConstants.PREFIX, JenkinsAutoConstants.NAMESPACE);
+
 		PREFIX_MAP = Collections.unmodifiableMap(prefixes);
 	}
 
@@ -171,18 +172,18 @@ public class OslcAutomationProvider implements RootAction {
 	}
 
     /*
-     * /plugin/hudson-oslc-auto -> src/main/webapp
+     * /plugin/jenkins-oslc-auto -> src/main/webapp
      */
     @Override
 	public String getIconFileName() {
-		return "/plugin/hudson-oslc-auto/images/oslc.png";
+		return "/plugin/jenkins-oslc-auto/images/oslc.png";
 	}
 
     @Override
 	public String getUrlName() {
 		return PATH_AUTO;
 	}
-    
+
     /*
      * You can test the plugin is running by going to /auto/hello
      */
@@ -192,7 +193,7 @@ public class OslcAutomationProvider implements RootAction {
 
     /*
      * Path: /auto/provider
-     * 
+     *
      * Generate the service provider description document.
      */
 	public void doProvider(StaplerRequest request, StaplerResponse response)
@@ -221,11 +222,11 @@ public class OslcAutomationProvider implements RootAction {
 		        getBaseUriBuilder().path("queryRuns").build());
 		queryRuns.addResourceType(new URI(AutomationConstants.TYPE_AUTOMATION_RESULT));
 		service.addQueryCapability(queryRuns);
-		
+
 		UriBuilder creationFactoryUriBuilder = getBaseUriBuilder().path("scheduleBuild");
 
 		/*
-		 * Hudson uses crumbs to prevent CSRF attacks on POST requests. OSLC
+		 * Jenkins uses crumbs to prevent CSRF attacks on POST requests. OSLC
 		 * interfaces cannot support this, however. To workaround -- for now at
 		 * least -- bake the crumb into the URL. Then we can use OAuth or
 		 * another authentication mechanism to avoid CSRF problems.
@@ -236,11 +237,11 @@ public class OslcAutomationProvider implements RootAction {
 			String crumb = issuer.getCrumb(null);
 			creationFactoryUriBuilder.queryParam(crumbName, crumb);
 		}
- 
+
 		CreationFactory scheduleBuild = new CreationFactory("Schedule Build", creationFactoryUriBuilder.build());
 		scheduleBuild.addResourceType(new URI(AutomationConstants.TYPE_AUTOMATION_REQUEST));
 		service.addCreationFactory(scheduleBuild);
-		
+
 		Dialog selectJobs = new Dialog("Select Job", getBaseUriBuilder().path("selectJob").build());
 		selectJobs.addResourceType(new URI(AutomationConstants.TYPE_AUTOMATION_PLAN));
 		selectJobs.setHintHeight("400px");
@@ -262,7 +263,7 @@ public class OslcAutomationProvider implements RootAction {
 
 	/*
 	 * Path: /auto/queryJobs
-	 * 
+	 *
 	 * Jobs query capability.
 	 */
 	public void doQueryJobs(StaplerRequest request, StaplerResponse response)
@@ -272,7 +273,7 @@ public class OslcAutomationProvider implements RootAction {
         @SuppressWarnings("rawtypes")
         Collection<Job> jobs = Hudson.getInstance().getItems(Job.class);
 		ArrayList<AutomationPlan> plans = new ArrayList<AutomationPlan>();
-		
+
 		// TODO: Add support for oslc.where and oslc.select.
 		for (Job<?, ?> job : jobs) {
 			plans.add(toAutomationPlan(job));
@@ -283,7 +284,7 @@ public class OslcAutomationProvider implements RootAction {
 
 	/*
 	 * Path: /auto/selectJob
-	 * 
+	 *
 	 * Jobs selection dialog
 	 */
 	public void doSelectJob(StaplerRequest request, StaplerResponse response)
@@ -298,7 +299,7 @@ public class OslcAutomationProvider implements RootAction {
 
 	/*
 	 * Path: /auto/job/*
-	 * 
+	 *
 	 * Handle requests for jobs and runs.
 	 */
 	// TODO: Break up this method and clean up URL handling.
@@ -319,7 +320,7 @@ public class OslcAutomationProvider implements RootAction {
 		// Remove leading '/'
 		restOfPath = restOfPath.substring(1);
 		String segments[] = restOfPath.split("/");
-		
+
 		// URI patterns:
 		//   <job-name>
 		//   <job-name>/preview
@@ -355,7 +356,7 @@ public class OslcAutomationProvider implements RootAction {
 				//   <job-name>/run/<run-number>/preview
 				if (PATH_PREVIEW.equals(segments[3])) {
 					/*
-					 * See /hudson-oslc-auto/src/main/resources/hudson/model/Run/preview.jelly
+					 * See /jenkins-oslc-auto/src/main/resources/jenkins/model/Run/preview.jelly
 					 */
 					response.forward(run, "preview", request);
 					return;
@@ -367,7 +368,7 @@ public class OslcAutomationProvider implements RootAction {
 					AutomationRequest autoRequest = toAutomationRequest(request, job, run);
 					marshal(autoRequest);
 				}
-				
+
 				if ("buildStatus".equals(segments[3])) {
 					throw HttpResponses.redirectViaContextPath(run.getUrl() + "/buildStatus");
 				}
@@ -390,7 +391,7 @@ public class OslcAutomationProvider implements RootAction {
 			//   <job-name>/preview
 			if (segments.length == 2 && PATH_PREVIEW.equals(segments[1])) {
 				/*
-				 * See /hudson-oslc-auto/src/main/resources/hudson/model/Job/preview.jelly
+				 * See /jenkins-oslc-auto/src/main/resources/jenkins/model/Job/preview.jelly
 				 */
 				response.forward(job, "preview", request);
 				return;
@@ -405,7 +406,7 @@ public class OslcAutomationProvider implements RootAction {
 			if (MediaType.TEXT_HTML_TYPE.isCompatible(type)) {
 				throw HttpResponses.redirectViaContextPath(job.getUrl());
 			}
-	
+
 			if (MarshallerConstants.MT_OSLC_COMPACT.isCompatible(type)) {
 				handleCompact(job);
 			} else {
@@ -414,20 +415,20 @@ public class OslcAutomationProvider implements RootAction {
 			}
 		}
 	}
-	
+
 	/*
 	 * Handle the Compact representation of a job.
 	 */
 	private void handleCompact(Job<?, ?> job) throws IOException,
 	        URISyntaxException {
-	   Compact c = new Compact(); 
+	   Compact c = new Compact();
 
 	   c.setAbout(getJobURI(job));
 	   c.setTitle(job.getFullDisplayName());
-	   
+
 	   String icon = Stapler.getCurrentRequest().getRootPath() + job.getBuildHealth().getIconUrl("16x16");
 	   c.setIcon(new URI(icon));
-	   
+
 	   Preview p = new Preview();
 	   p.setHintHeight("200px");
 	   p.setHintWidth("400px");
@@ -442,17 +443,17 @@ public class OslcAutomationProvider implements RootAction {
 	 */
 	private void handleCompact(Job<?, ?> job, Run<?, ?> run) throws IOException,
 	        URISyntaxException {
-		Compact c = new Compact(); 
+		Compact c = new Compact();
 
 	   c.setAbout(getRunURI(job, run));
 	   c.setTitle(run.getFullDisplayName());
 	   c.setShortTitle(run.getDisplayName());
-	   
+
 	   String relative = run.getIconColor().getImageOf("16x16");
 	   // Remove context or it shows up twice since getRootPath() and getImageOf() both include it.
 	   String icon = Stapler.getCurrentRequest().getRootPath() + relative.substring(Stapler.getCurrentRequest().getContextPath().length());
 	   c.setIcon(new URI(icon));
-	
+
 	   Preview p = new Preview();
 	   p.setHintHeight("300px");
 	   p.setHintWidth("400px");
@@ -464,7 +465,7 @@ public class OslcAutomationProvider implements RootAction {
 
 	/*
 	 * Path: /auto/scheduleBuild
-	 * 
+	 *
 	 * POST to create automation requests to schedule builds.
 	 */
 	public void doScheduleBuild(StaplerRequest request, StaplerResponse response)
@@ -519,7 +520,7 @@ public class OslcAutomationProvider implements RootAction {
 				return description != null ? description : "OSLC Automation Request";
 			}
 		};
-		
+
 		ParameterInstance[] parameters = autoRequest.getInputParameters();
 		boolean suceeded;
 		if (parameters.length == 0) {
@@ -541,7 +542,7 @@ public class OslcAutomationProvider implements RootAction {
 	}
 
 	/*
-	 * Determine the Hudson parameter values from the OSLC parameter instances
+	 * Determine the Jenkins parameter values from the OSLC parameter instances
 	 * in the AutomationRequest
 	 */
 	private List<ParameterValue> getParameterValues(AbstractProject<?, ?> project, ParameterInstance[] parameters) {
@@ -550,7 +551,7 @@ public class OslcAutomationProvider implements RootAction {
 	    	LOG.log(Level.FINE, "Job does not take parameters: " + project.getName());
 	    	throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST); // This build is not parameterized.
 	    }
-	    
+
 	    HashMap<String, String> inputMap = new HashMap<String, String>();
 	    for (ParameterInstance param : parameters) {
 	    	inputMap.put(param.getName(), param.getValue());
@@ -565,7 +566,7 @@ public class OslcAutomationProvider implements RootAction {
 	    			LOG.log(Level.FINE, "Missing parameter " + def.getName() + " for job " + project.getName());
 	    			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
 	    		}
-	    		
+
 	    		values.add(defaultValue);
 	    	} else {
 	    		if (def instanceof SimpleParameterDefinition) {
@@ -582,7 +583,7 @@ public class OslcAutomationProvider implements RootAction {
     }
 
 	/*
-	 * Convert a Hudson Job to an OSLC AutomationPlan
+	 * Convert a Jenkins Job to an OSLC AutomationPlan
 	 */
 	public AutomationPlan toAutomationPlan(Job<?, ?> job) throws URISyntaxException {
 		StaplerRequest request = Stapler.getCurrentRequest();
@@ -591,7 +592,7 @@ public class OslcAutomationProvider implements RootAction {
 		plan.setTitle(job.getDisplayName());
 		plan.setDescription(job.getDescription());
 		plan.setServiceProvider(getProviderURI());
-		
+
 		if (job instanceof AbstractProject) {
 			AbstractProject<?, ?> project = (AbstractProject<?, ?>) job;
 			fillInParameters(request, plan, project);
@@ -601,7 +602,7 @@ public class OslcAutomationProvider implements RootAction {
 	}
 
 	/*
-	 * Create the OSLC parameter definitions form the Hudson parameter definitions.
+	 * Create the OSLC parameter definitions form the Jenkins parameter definitions.
 	 */
 	private void fillInParameters(StaplerRequest request, AutomationPlan plan, AbstractProject<?, ?> project) throws URISyntaxException {
 	    ParametersDefinitionProperty pp = project.getProperty(ParametersDefinitionProperty.class);
@@ -614,18 +615,18 @@ public class OslcAutomationProvider implements RootAction {
 	    for (ParameterDefinition def : pp.getParameterDefinitions()) {
 	    	autoParams[i++] = toProperty(request, def);
 	    }
-	
+
 	    plan.setParameterDefinitions(autoParams);
     }
 
 	/*
-	 * Convert an individual Hudson parameter definition to an OSLC Property.
+	 * Convert an individual Jenkins parameter definition to an OSLC Property.
 	 */
 	private Property toProperty(StaplerRequest request, ParameterDefinition def) throws URISyntaxException {
 	    Property prop = new Property();
 	    prop.setName(def.getName());
 	    prop.setDescription(def.getDescription());
-	    
+
 	    if (def instanceof BooleanParameterDefinition) {
 	    	prop.setValueType(new URI(XSDDatatype.XSDboolean.getURI()));
 	    } else if (def instanceof StringParameterDefinition || def instanceof PasswordParameterDefinition) {
@@ -636,7 +637,7 @@ public class OslcAutomationProvider implements RootAction {
 	    	prop.setAllowedValuesCollection(choices.getChoices());
 	    }
 	    // TODO: Other types?
-	
+
 	    ParameterValue defaultValue = def.getDefaultParameterValue();
 	    if (defaultValue == null) {
 	    	prop.setOccurs(Occurs.ExactlyOne);

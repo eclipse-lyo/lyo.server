@@ -13,4 +13,4 @@
 *
 *     Samuel Padgett - initial implementation
 *******************************************************************************/
-package org.eclipse.lyo.server.hudson.auto.resource;
+package org.eclipse.lyo.server.jenkins.auto.resource;

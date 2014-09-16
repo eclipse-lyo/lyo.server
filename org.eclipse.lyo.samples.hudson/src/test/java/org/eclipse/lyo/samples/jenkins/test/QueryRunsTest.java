@@ -13,7 +13,7 @@
  *
  *     Samuel Padgett - initial implementation
  *******************************************************************************/
-package org.eclipse.lyo.samples.hudson.test;
+package org.eclipse.lyo.samples.jenkins.test;
 
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;

@@ -4,7 +4,7 @@
 * All rights reserved. This program and the accompanying materials
 * are made available under the terms of the Eclipse Public License v1.0
 * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
-*  
+*
 * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
 * and the Eclipse Distribution License is available at
 * http://www.eclipse.org/org/documents/edl-v10.php.
@@ -13,15 +13,15 @@
 *
 *     Samuel Padgett - initial implementation
 *******************************************************************************/
-package org.eclipse.lyo.server.hudson.auto.resource;
+package org.eclipse.lyo.server.jenkins.auto.resource;
 
 /**
- * OSLC Automation constants for the Hudson provider.
- * 
+ * OSLC Automation constants for the Jenkins provider.
+ *
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
-public class HudsonAutoConstants
+public class JenkinsAutoConstants
 {
-    public static final String PREFIX = "hudson";
-    public static final String NAMESPACE = "http://eclipse.org/lyo/hudson#";
+    public static final String PREFIX = "jenkins";
+    public static final String NAMESPACE = "http://eclipse.org/lyo/jenkins#";
 }
