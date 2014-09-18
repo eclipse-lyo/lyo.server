@@ -13,10 +13,12 @@
  *
  *     Samuel Padgett - initial implementation
  *     Samuel Padgett - update for Jenkins
+ *     Samuel Padgett - challenge with 401 status code when unauthenticated
  *******************************************************************************/
 package org.eclipse.lyo.server.jenkins.auto;
 
 import hudson.Extension;
+import hudson.model.Item;
 import hudson.model.ParameterValue;
 import hudson.model.Result;
 import hudson.model.RootAction;
@@ -35,7 +37,9 @@ import hudson.model.PasswordParameterDefinition;
 import hudson.model.Run;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
+import hudson.security.Permission;
 import hudson.security.csrf.CrumbIssuer;
+import hudson.util.PluginServletFilter;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -52,7 +56,13 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -119,6 +129,38 @@ public class OslcAutomationProvider implements RootAction {
 	static {
 		System.setProperty("javax.ws.rs.ext.RuntimeDelegate",
 		        "org.apache.wink.common.internal.runtime.RuntimeDelegateImpl");
+		try {
+			PluginServletFilter.addFilter(new BasicAuthFilter());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private final static String WWW_AUTHENTICATE = "WWW-Authenticate";
+	private final static String BASIC_AUTH_CHALLENGE = "Basic realm=\"Hudson\"";
+
+	public static class BasicAuthFilter implements Filter {
+		@Override
+		public void init(FilterConfig filterConfig) throws ServletException {}
+
+		@Override
+		public void doFilter(ServletRequest request, ServletResponse response,
+				FilterChain chain) throws IOException, ServletException {
+			if (request instanceof HttpServletRequest && response instanceof HttpServletResponse) {
+				HttpServletRequest httpRequest = (HttpServletRequest) request;
+				HttpServletResponse httpResponse = (HttpServletResponse) response;
+				if (httpRequest.getPathInfo().startsWith("/" + PATH_AUTO + "/") &&
+						!Hudson.getInstance().hasPermission(Hudson.READ)) {
+					httpResponse.addHeader(WWW_AUTHENTICATE, BASIC_AUTH_CHALLENGE);
+					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					return;
+				}
+			}
+			chain.doFilter(request, response);
+		}
+
+		@Override
+		public void destroy() {}
 	}
 
 	/**
@@ -235,7 +277,9 @@ public class OslcAutomationProvider implements RootAction {
 		if (issuer != null) {
 			String crumbName = issuer.getDescriptor().getCrumbRequestField();
 			String crumb = issuer.getCrumb(null);
-			creationFactoryUriBuilder.queryParam(crumbName, crumb);
+			if (crumb != null) {
+				creationFactoryUriBuilder.queryParam(crumbName, crumb);
+			}
 		}
 
 		CreationFactory scheduleBuild = new CreationFactory("Schedule Build", creationFactoryUriBuilder.build());
@@ -509,6 +553,11 @@ public class OslcAutomationProvider implements RootAction {
 		if (!(job instanceof AbstractProject)) {
 			LOG.log(Level.WARNING, "Cannot schedule builds for jobs that don't extend AbstractProject: " + jobName);
 			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+		}
+
+		if (!job.hasPermission(Item.BUILD)) {
+			response.setHeader(WWW_AUTHENTICATE, BASIC_AUTH_CHALLENGE);
+			throw HttpResponses.status(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 
 		AbstractProject<?, ?> project = (AbstractProject<?, ?>) job;

@@ -4,7 +4,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
- *  
+ *
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
  * and the Eclipse Distribution License is available at
  * http://www.eclipse.org/org/documents/edl-v10.php.
@@ -40,17 +40,17 @@ public abstract class OslcAutomationProviderTest extends HudsonTestCase {
 		assertEquals(HttpServletResponse.SC_OK, response.getStatusCode());
 		assertEquals(contentType, response.getHeaders().getFirst("Content-Type"));
 		assertEquals("2.0", response.getHeaders().getFirst("OSLC-Core-Version"));
-		
+
 		T entity = response.getEntity(cls);
 		assertNotNull(entity);
-		
+
 		return entity;
 	}
-	
+
 	protected String urlFromRelative(String relative) throws IOException {
 		return getURL().toExternalForm() + "auto" + relative;
 	}
-	
+
 	protected String getJobURI(Project<?, ?> project) throws IOException {
 		return getJobURI(project.getName());
 	}
@@ -58,10 +58,10 @@ public abstract class OslcAutomationProviderTest extends HudsonTestCase {
 	protected String getJobURI(String name) throws IOException {
 		UriBuilder b = UriBuilder.fromUri(urlFromRelative("/job/"));
 		b.path(name);
-		
+
 		return b.build().toString();
 	}
-	
+
 	protected String lookupQueryCapability(String type) throws Exception {
 		OslcClient client = new OslcClient();
 		return client.lookupQueryCapability(urlFromRelative("/provider"),
@@ -75,5 +75,13 @@ public abstract class OslcAutomationProviderTest extends HudsonTestCase {
 
 	protected String getAutoPrefixQueryParam() {
 	    return "oslc_auto=<" + AutomationConstants.AUTOMATION_NAMESPACE + ">";
+	}
+
+	protected void assertUnauthorized(ClientResponse response) {
+		assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatusCode());
+		String authenticateHeader = response.getHeaders().getFirst("WWW-Authenticate");
+		assertNotNull("Expected WWW-Authenticate response header", authenticateHeader);
+		assertTrue("Expected basic access authentication challenge",
+				authenticateHeader.startsWith("Basic "));
 	}
 }

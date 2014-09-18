@@ -4,7 +4,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
- *  
+ *
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
  * and the Eclipse Distribution License is available at
  * http://www.eclipse.org/org/documents/edl-v10.php.
@@ -26,32 +26,45 @@ import org.eclipse.lyo.client.oslc.resources.AutomationConstants;
 import org.eclipse.lyo.oslc4j.core.model.Dialog;
 import org.eclipse.lyo.oslc4j.core.model.Service;
 import org.eclipse.lyo.oslc4j.core.model.ServiceProvider;
+import org.jvnet.hudson.test.recipes.PresetData;
 
 /**
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
 public class ServiceProviderDocumentTest extends OslcAutomationProviderTest {
-	public void testServiceProviderDocumentXml() throws Exception {
+	public void testGetXml() throws Exception {
 		testServiceProviderDocument(OSLCConstants.CT_XML);
 	}
 
-	public void testServiceProviderDocumentRdfXml() throws Exception {
+	public void testGetRdfXml() throws Exception {
 		testServiceProviderDocument(OSLCConstants.CT_RDF);
 	}
 
-	public void testServiceProviderDocumentTurtle() throws Exception {
+	public void testGetTurtle() throws Exception {
 		testServiceProviderDocument("text/turtle");
 	}
-	
+
 	public void testNotAcceptable() throws Exception {
 		OslcClient client = new OslcClient();
 		ClientResponse response = client.getResource(urlFromRelative("/provider"), "application/bogus");
 		assertEquals(HttpServletResponse.SC_NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
+
+	@PresetData(PresetData.DataSet.NO_ANONYMOUS_READACCESS)
+	public void testGetNoReadAccess() throws Exception {
+		OslcClient client = new OslcClient();
+		ClientResponse response = client.getResource(urlFromRelative("/provider"), "text/turtle");
+		assertUnauthorized(response);
+	}
+
+	@PresetData(PresetData.DataSet.ANONYMOUS_READONLY)
+	public void testGetReadOnly() throws Exception {
+		testServiceProviderDocument("text/turtle");
+	}
+
 	private void testServiceProviderDocument(String contentType) throws Exception {
 		ServiceProvider p = getEntity("/provider", contentType, ServiceProvider.class);
-	
+
 		assertEquals("OSLC Automation Provider for Hudson and Jenkins", p.getTitle());
 		Service[] services = p.getServices();
 		assertEquals(1, services.length);
@@ -67,7 +80,7 @@ public class ServiceProviderDocumentTest extends OslcAutomationProviderTest {
 		assertEquals(2, service.getQueryCapabilities().length);
 		assertEquals(1, service.getCreationFactories().length);
 		assertEquals(1, service.getSelectionDialogs().length);
-		
+
 		Dialog selection = service.getSelectionDialogs()[0];
 		assertNotNull(selection.getHintHeight());
 		assertNotNull(selection.getHintWidth());
