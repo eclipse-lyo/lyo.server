@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2013 IBM Corporation.
+Copyright (c) 2013, 2014 IBM Corporation.
  
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License v1.0
@@ -12,13 +12,25 @@ http://www.eclipse.org/org/documents/edl-v10.php.
 Contributors:
  
     Samuel Padgett - initial implementation
+    Samuel Padgett - add links to automation services
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
   <l:layout title="${it.displayName}${not empty it.parent.fullDisplayName?' ['+it.parent.fullDisplayName+']':''}">
     <l:main-panel>
       <h1>OSLC Automation Provider for Hudson and Jenkins</h1>
-      <p>Learn more at <a href="http://open-services.net">http://open-services.net</a>.</p>
-    </l:main-panel>
+
+      Services:
+
+      <ul>
+          <li>Service Description Document - <a href="http://localhost:8090/jenkins/auto/provider">http://localhost:8090/jenkins/auto/provider</a></li>
+          <li>Jobs Query Capability - <a href="http://localhost:8090/jenkins/auto/queryJobs">http://localhost:8090/jenkins/auto/queryJobs</a></li>
+          <li>Runs Query Capability - <a href="http://localhost:8090/jenkins/auto/queryRuns">http://localhost:8090/jenkins/auto/queryRuns</a></li>
+          <li>Jobs Selection Dialog - <a href="http://localhost:8090/jenkins/auto/selectJob">http://localhost:8090/jenkins/auto/selectJob</a></li>
+          <li>Jobs Creation Dialog - <a href="http://localhost:8090/jenkins/auto/scheduleBuildDialog">http://localhost:8090/jenkins/auto/scheduleBuildDialog</a></li>
+      </ul>
+      <p>Learn more at <a href="http://open-services.net">http://open-services.net</a>
+          and <a href="http://eclipse.org/lyo">http://eclipse.org/lyo</a>.</p>
+  </l:main-panel>
   </l:layout>
 </j:jelly>
