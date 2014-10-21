@@ -72,29 +72,56 @@ Contributors:
             </div>
         </form>
 
-<script type="text/javascript" src="${app.rootUrl}/plugin/jenkins-oslc-auto/js/dialog.js" />
 <script>
-function ok() {
-	var results = [];
-	var inputElements = document.getElementsByTagName('input');
-    for(var i=0; inputElements[i]; ++i){
-      if(inputElements[i].checked){
-           var jobName = inputElements[i].value;
-           var uri = "${app.rootURL}/auto/job/" + encodeURIComponent(jobName);
-           results.push({
-             'oslc:label': jobName,
-             'rdf:resource': uri
-           });
-      }
+    // Duplicate code for now because of problems including external scripts
+    // across Jenkins/Hudson versions.
+    function respondWithWindowName(/*string*/ response) {
+        var returnURL = window.name;
+        window.name = response;
+        window.location.href = returnURL;
     }
-    
-    var response = { 'oslc:results': results };
-    respond(Object.toJSON(response)); // make sure to include prototype.js
-}
 
-function cancel() {
-	respond('{ "oslc:results": []}');
-}
+    function respondWithPostMessage(/*string*/ response) {
+        if( window.parent != null ) {
+            window.parent.postMessage(response, "*");
+        } else {
+            window.postMessage(response, "*");
+        }
+    }
+
+    function respond(/*string*/ response) {
+        response = 'oslc-response:' + response;
+
+        if (window.location.hash == '#oslc-core-windowName-1.0') {       
+            // Window Name protocol in use
+            respondWithWindowName(response);
+        } else if (window.location.hash == '#oslc-core-postMessage-1.0') {
+            // Post Message protocol in use
+            respondWithPostMessage(response);
+        } 
+    }
+
+    function ok() {
+        var results = [];
+        var inputElements = document.getElementsByTagName('input');
+        for(var i=0; inputElements[i]; ++i){
+            if(inputElements[i].checked){
+                var jobName = inputElements[i].value;
+                var uri = "${app.rootURL}/auto/job/" + encodeURIComponent(jobName);
+                results.push({
+                        'oslc:label': jobName,
+                        'rdf:resource': uri
+                });
+            }
+        }
+
+        var response = { 'oslc:results': results };
+        respond(JSON.stringify(response));
+    }
+
+    function cancel() {
+        respond('{ "oslc:results": []}');
+    }
 </script>
 </l:oslcLayout>
 </j:jelly>
