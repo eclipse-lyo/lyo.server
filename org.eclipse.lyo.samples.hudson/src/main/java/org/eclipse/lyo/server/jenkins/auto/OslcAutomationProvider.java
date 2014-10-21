@@ -14,6 +14,8 @@
  *     Samuel Padgett - initial implementation
  *     Samuel Padgett - update for Jenkins
  *     Samuel Padgett - challenge with 401 status code when unauthenticated
+ *     Samuel Padgett - add initial schedule build dialog
+ *     Samuel Padgett - add where support for oslc_auto:producedByAutomationRequest
  *******************************************************************************/
 package org.eclipse.lyo.server.jenkins.auto;
 
@@ -809,7 +811,9 @@ public class OslcAutomationProvider implements RootAction {
 				Iterator<?> i = job.getBuilds().iterator();
 				while (i.hasNext()) {
 					Run<?, ?> run = (Run<?, ?>) i.next();
-					results.add(toAutomationResult(request, job, run));
+					if (runMatchesWhereClause(request, job, run, whereClause)) {
+						results.add(toAutomationResult(request, job, run));
+					}
 				}
 			}
 		}
@@ -827,6 +831,23 @@ public class OslcAutomationProvider implements RootAction {
 			String prop = pname.namespace + pname.local;
 			if (prop.equals(AutomationConstants.AUTOMATION_NAMESPACE + "reportsOnAutomationPlan")
 			        && !uriMatches(getJobURI(job), term)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private boolean runMatchesWhereClause(StaplerRequest request, Job<?, ?> job, Run<?, ?> run, WhereClause whereClause) {
+		if (whereClause == null) {
+			return true;
+		}
+
+		for (SimpleTerm term : whereClause.children()) {
+			PName pname = term.property();
+			String prop = pname.namespace + pname.local;
+			if (prop.equals(AutomationConstants.AUTOMATION_NAMESPACE + "producedByAutomationRequest")
+					&& !uriMatches(getAutoRequestURI(job, run), term)) {
 				return false;
 			}
 		}
