@@ -1,86 +1,139 @@
+<!--
+Copyright (c) 2013, 2014 IBM Corporation.
+ 
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+   
+The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+ 
+    Samuel Padgett - initial implementation
+ -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:local="local">
-<l:oslcLayout>
-	<j:set var="jobs" value="${it.items}"/>
-	<j:set var="views" value="${it.views}"/>
-	<j:set var="jobBaseUrl" value="${rootURL}/"/>
- 
-	<form>
-	  <t:setIconSize/>
-	  <div class="dashboard">
-	
-	    <j:if test="${columnExtensions==null}">
-	        <j:invokeStatic var="columnExtensions" className="hudson.model.ListView" method="getDefaultColumns"/>
-	    </j:if>
-	
-	    <j:if test="${!empty(jobs) or !empty(views)}">
-	      <!-- the caller can inject a tab bar here -->
-	      <!-- Doesn't work, need to investigate....
-	      <d:invokeBody/>
-	      -->
-	      <!-- project list -->
-	      <table id="projectstatus" class="sortable pane bigtable"
-	             style="${showViewTabs?'margin-top:0px; border-top: none;':null}">
-	        <tr style="border-top: 0px;">
-	          <!-- Radio column -->
-	          <th></th>
-	          <j:forEach var="col" items="${columnExtensions}">
-	             <st:include page="columnHeader.jelly" it="${col}" />
-	          </j:forEach>
-	          <th>
-	            <st:nbsp/>
-	          </th>
-	        </tr>
-	
-	        <j:forEach var="v" items="${views}">
-	          <t:projectViewNested />
-	        </j:forEach>
-	        <j:forEach var="job" items="${jobs}">
-	          <j:set var="relativeLinkToJob" value="${rootURL}${job.url}"/>
-			  <tr id="job_${job.name}" class="${job.disabled?'disabledJob':null}">
-			  	<td><input name="job" value="${job.name}" type="radio"/></td>
-			    <j:forEach var="col" items="${columnExtensions}">
-			      <st:include page="column.jelly" it="${col}"/>
-			    </j:forEach>
-			    <td>
-			      <st:nbsp/>
-			    </td>
-			  </tr>
-	        </j:forEach>
-	      </table>
-	    </j:if>
-	  </div>
-	
-	  <div style="margin-top: 10px;">
-		<button onclick="ok(); return false;">OK</button>
-		<button onclick="cancel(); return false;">Cancel</button>
-	  </div>
-	</form>
+    <l:oslcLayout>
+        <j:set var="jobs" value="${it.items}"/>
+        <j:set var="views" value="${it.views}"/>
+        <j:set var="jobBaseUrl" value="${rootURL}/"/>
 
-<script type="text/javascript" src="${rootURL}/plugin/jenkins-oslc-auto/js/dialog.js" />
+        <t:setIconSize/>
+        <div class="dashboard">
+
+            <j:if test="${columnExtensions==null}">
+                <j:invokeStatic var="columnExtensions" className="hudson.model.ListView" method="getDefaultColumns"/>
+            </j:if>
+
+
+            <j:choose>
+                <j:when test="${empty(jobs)}">
+                    <h2>No jobs.</h2>
+                </j:when>
+                <j:otherwise>
+                    <table id="projectstatus" class="sortable pane bigtable"
+                            style="${showViewTabs?'margin-top:0px; border-top: none;':null}">
+                        <tr style="border-top: 0px;">
+                            <!-- Radio column -->
+                            <th></th>
+                            <j:forEach var="col" items="${columnExtensions}">
+                                <st:include page="columnHeader.jelly" it="${col}" />
+                            </j:forEach>
+                            <th>
+                                <st:nbsp/>
+                            </th>
+                        </tr>
+
+                        <j:forEach var="v" items="${views}">
+                            <t:projectViewNested />
+                        </j:forEach>
+                        <j:forEach var="job" items="${jobs}">
+                            <j:set var="relativeLinkToJob" value="${rootURL}${job.url}"/>
+                            <tr id="job_${job.name}" class="${job.disabled?'disabledJob':null}">
+                                <td><input name="job" value="${job.name}" type="radio"/></td>
+                                <j:forEach var="col" items="${columnExtensions}">
+                                    <st:include page="column.jelly" it="${col}"/>
+                                </j:forEach>
+                                <td>
+                                    <st:nbsp/>
+                                </td>
+                            </tr>
+                        </j:forEach>
+                    </table>
+                    <div style="margin-top: 10px;">
+                        <button onclick="ok(); return false;">OK</button>
+                        <button onclick="cancel(); return false;">Cancel</button>
+                    </div>
+                </j:otherwise>
+            </j:choose>
+        </div>
+
 <script>
-function ok() {
-	var results = [];
-	var inputElements = document.getElementsByTagName('input');
-    for(var i=0; inputElements[i]; ++i){
-      if(inputElements[i].checked){
-           var jobName = inputElements[i].value;
-           var uri = "${rootURL}/auto/job/" + encodeURIComponent(jobName);
-           results.push({
-             'oslc:label': jobName,
-             'rdf:resource': uri
-           });
-      }
+    // Duplicate code for now because of problems including external scripts
+    // across Jenkins/Hudson versions.
+    function respondWithWindowName(/*string*/ response) {
+        var returnURL = window.name;
+        window.name = response;
+        window.location.href = returnURL;
     }
-    
-    var response = { 'oslc:results': results };
-    // Does not work in IE 7
-    respond(JSON.stringify(response));
-}
 
-function cancel() {
-	respond('{ "oslc:results": []}');
-}
+    function respondWithPostMessage(/*string*/ response) {
+        if( window.parent != null ) {
+            window.parent.postMessage(response, "*");
+        } else {
+            window.postMessage(response, "*");
+        }
+    }
+
+    function respond(/*string*/ response) {
+        response = 'oslc-response:' + response;
+
+        if (window.location.hash == '#oslc-core-windowName-1.0') {       
+            // Window Name protocol in use
+            respondWithWindowName(response);
+        } else if (window.location.hash == '#oslc-core-postMessage-1.0') {
+            // Post Message protocol in use
+            respondWithPostMessage(response);
+        } 
+    }
+
+    function ok() {
+        var results = [];
+        var inputElements = document.getElementsByTagName('input');
+        for(var i=0; inputElements[i]; ++i) {
+            if(inputElements[i].checked) {
+                var jobName = inputElements[i].value;
+                var encodedName = encodeURIComponent(jobName);
+
+                // FIXME: use request URI
+                var uri = "${rootURL}/auto/job/" + encodedName;
+
+                // Start the build.
+                var xhr = new XMLHttpRequest()
+                xhr.open("GET", "${rootURL}/job/" + encodedName + "/build?delay=0sec", true);
+                xhr.send();
+                // TODO: Check if successful
+
+                results.push({
+                    'oslc:label': jobName,
+                    'rdf:resource': uri
+                });
+
+                // We're using radio buttons, so there should only be one selection.
+                break;
+            }
+        }
+
+        var response = { 'oslc:results': results };
+        respond(JSON.stringify(response));
+        return false;
+    }
+
+    function cancel() {
+        respond('{ "oslc:results": []}');
+    }
 </script>
 </l:oslcLayout>
 </j:jelly>

@@ -37,7 +37,6 @@ import hudson.model.PasswordParameterDefinition;
 import hudson.model.Run;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
-import hudson.security.Permission;
 import hudson.security.csrf.CrumbIssuer;
 import hudson.util.PluginServletFilter;
 
@@ -292,6 +291,12 @@ public class OslcAutomationProvider implements RootAction {
 		selectJobs.setHintWidth("600px");
 		service.addSelectionDialog(selectJobs);
 
+		Dialog scheduleBuildDialog = new Dialog("Schedule Build", getBaseUriBuilder().path("scheduleBuildDialog").build());
+		selectJobs.addResourceType(new URI(AutomationConstants.TYPE_AUTOMATION_REQUEST));
+		selectJobs.setHintHeight("400px");
+		selectJobs.setHintWidth("600px");
+		service.addCreationDialog(scheduleBuildDialog);
+
 		marshal(provider);
 	}
 
@@ -335,6 +340,17 @@ public class OslcAutomationProvider implements RootAction {
 	        throws ServletException, IOException {
 		requireGET();
 		response.forward(new JobSelectionDialog(), "dialog", request);
+	}
+
+	/*
+	 * Path: /auto/scheduleBuildDialog
+	 *
+	 * AutomationRequest dialog
+	 */
+	public void doScheduleBuildDialog(StaplerRequest request, StaplerResponse response)
+	        throws ServletException, IOException {
+		requireGET();
+		response.forward(new ScheduleBuildDialog(), "dialog", request);
 	}
 
 	private Job<?, ?> getJob(String name) {
