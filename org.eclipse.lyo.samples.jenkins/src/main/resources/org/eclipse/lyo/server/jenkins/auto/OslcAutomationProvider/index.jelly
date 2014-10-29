@@ -23,11 +23,11 @@ Contributors:
       Services:
 
       <ul>
-          <li>Service Description Document - <a href="http://localhost:8090/jenkins/auto/provider">http://localhost:8090/jenkins/auto/provider</a></li>
-          <li>Jobs Query Capability - <a href="http://localhost:8090/jenkins/auto/queryJobs">http://localhost:8090/jenkins/auto/queryJobs</a></li>
-          <li>Runs Query Capability - <a href="http://localhost:8090/jenkins/auto/queryRuns">http://localhost:8090/jenkins/auto/queryRuns</a></li>
-          <li>Jobs Selection Dialog - <a href="http://localhost:8090/jenkins/auto/selectJob">http://localhost:8090/jenkins/auto/selectJob</a></li>
-          <li>Jobs Creation Dialog - <a href="http://localhost:8090/jenkins/auto/scheduleBuildDialog">http://localhost:8090/jenkins/auto/scheduleBuildDialog</a></li>
+          <li>Service Description Document - <a href="${rootURL}/auto/provider">${rootURL}/auto/provider</a></li>
+          <li>Jobs Query Capability - <a href="${rootURL}/auto/queryJobs">${rootURL}/auto/queryJobs</a></li>
+          <li>Runs Query Capability - <a href="${rootURL}/auto/queryRuns">${rootURL}/auto/queryRuns</a></li>
+          <li>Jobs Selection Dialog - <a href="${rootURL}/auto/selectJob">${rootURL}/auto/selectJob</a></li>
+          <li>Jobs Creation Dialog - <a href="${rootURL}/auto/scheduleBuildDialog">${rootURL}/auto/scheduleBuildDialog</a></li>
       </ul>
       <p>Learn more at <a href="http://open-services.net">http://open-services.net</a>
           and <a href="http://eclipse.org/lyo">http://eclipse.org/lyo</a>.</p>
