@@ -107,7 +107,7 @@ Contributors:
         for(var i=0; inputElements[i]; ++i){
             if(inputElements[i].checked){
                 var jobName = inputElements[i].value;
-                var uri = "${app.rootURL}/auto/job/" + encodeURIComponent(jobName);
+                var uri = "${it.providerURI}/job/" + encodeURIComponent(jobName);
                 results.push({
                         'oslc:label': jobName,
                         'rdf:resource': uri

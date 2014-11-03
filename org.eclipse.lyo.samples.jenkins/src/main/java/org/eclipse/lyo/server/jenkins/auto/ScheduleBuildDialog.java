@@ -15,15 +15,12 @@
  *******************************************************************************/
 package org.eclipse.lyo.server.jenkins.auto;
 
-import hudson.model.AllView;
-import hudson.model.Hudson;
-
 /**
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
-public class ScheduleBuildDialog extends AllView {
-	public ScheduleBuildDialog() {
-	    super("Schedule Build", Hudson.getInstance());
+public class ScheduleBuildDialog extends BaseDialog {
+	public ScheduleBuildDialog(String providerURI) {
+	    super(providerURI, "Schedule Build");
     }
 
 	/*
