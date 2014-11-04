@@ -16,6 +16,7 @@
  *     Samuel Padgett - challenge with 401 status code when unauthenticated
  *     Samuel Padgett - add initial schedule build dialog
  *     Samuel Padgett - add where support for oslc_auto:producedByAutomationRequest
+ *     Samuel Padgett - include error details on 4xx errors
  *******************************************************************************/
 package org.eclipse.lyo.server.jenkins.auto;
 
@@ -538,39 +539,46 @@ public class OslcAutomationProvider implements RootAction {
 
 		String contentType = request.getContentType();
 		if (contentType == null) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					"Missing content type");
 		}
 		unmarshaller.setMediaType(MediaType.valueOf(contentType));
 
 		final AutomationRequest autoRequest =
 				unmarshaller.unmarshal(request.getInputStream(), AutomationRequest.class);
 		if (autoRequest == null) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					"Can't find an oslc_auto:AutomationRequest resource in request body");
 		}
 
 		Link planLink = autoRequest.getExecutesAutomationPlan();
 		if (planLink == null) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					"Missing oslc_auto:executesAutomationPlan");
 		}
 
 		URI planURI = planLink.getValue();
 		String jobName = getJobNameFromURI(planURI);
 		if (jobName == null) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					String.format("Invalid Job URI <%s>", planURI.toString()));
 		}
 
 		Job<?, ?> job = getJob(jobName);
 		if (job == null) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					String.format("Job not found <%s>", planURI.toString()));
 		}
 
 		if (!job.isBuildable()) {
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					String.format("Job not buildable <%s>", planURI.toString()));
 		}
 
 		if (!(job instanceof AbstractProject)) {
 			LOG.log(Level.WARNING, "Cannot schedule builds for jobs that don't extend AbstractProject: " + jobName);
-			throw HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+			throw HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST,
+					String.format("Cannot schedule build for Job <%s>. It is not an instance of AbstractProject.", planURI.toString()));
 		}
 
 		if (!job.hasPermission(Item.BUILD)) {
@@ -600,7 +608,8 @@ public class OslcAutomationProvider implements RootAction {
 		if (!suceeded) {
 			// Build already queued.
 			LOG.log(Level.WARNING, "Automation request rejected (409 conflict) since build is already queued: " + jobName);
-			throw HttpResponses.status(HttpServletResponse.SC_CONFLICT);
+			throw HttpResponses.error(HttpServletResponse.SC_CONFLICT,
+					String.format("Job is already scheduled to be built <%s>", planURI.toString()));
 		}
 
 		URI requestURI = getAutoRequestURI(job, nextBuildNumber);
