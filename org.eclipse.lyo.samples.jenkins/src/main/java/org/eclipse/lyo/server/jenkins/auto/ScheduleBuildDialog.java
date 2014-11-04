@@ -19,8 +19,8 @@ package org.eclipse.lyo.server.jenkins.auto;
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
 public class ScheduleBuildDialog extends BaseDialog {
-	public ScheduleBuildDialog(String providerURI) {
-	    super(providerURI, "Schedule Build");
+	public ScheduleBuildDialog(String baseURI) {
+	    super(baseURI, "Schedule Build");
     }
 
 	/*

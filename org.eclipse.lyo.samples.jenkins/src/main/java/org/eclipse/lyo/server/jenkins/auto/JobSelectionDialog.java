@@ -22,8 +22,8 @@ package org.eclipse.lyo.server.jenkins.auto;
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
 public class JobSelectionDialog extends BaseDialog {
-	public JobSelectionDialog(String providerURI) {
-	    super(providerURI, "Job Selection");
+	public JobSelectionDialog(String baseURI) {
+	    super(baseURI, "Job Selection");
     }
 
 	/*

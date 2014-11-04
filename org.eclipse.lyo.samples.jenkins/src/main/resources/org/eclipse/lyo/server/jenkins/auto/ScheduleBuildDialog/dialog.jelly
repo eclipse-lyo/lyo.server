@@ -108,7 +108,7 @@ Contributors:
                 var encodedName = encodeURIComponent(jobName);
 
                 // FIXME: use request URI
-                var uri = "${it.providerURI}/job/" + encodeURIComponent(jobName);
+                var uri = "${it.baseURI}/job/" + encodeURIComponent(jobName);
 
                 // Start the build.
                 var xhr = new XMLHttpRequest()
