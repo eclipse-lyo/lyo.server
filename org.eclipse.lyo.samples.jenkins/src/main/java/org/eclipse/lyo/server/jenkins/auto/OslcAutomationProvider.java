@@ -342,7 +342,7 @@ public class OslcAutomationProvider implements RootAction {
 	public void doSelectJob(StaplerRequest request, StaplerResponse response)
 	        throws ServletException, IOException {
 		requireGET();
-		response.forward(new JobSelectionDialog(getProviderURI().toString()), "dialog", request);
+		response.forward(new JobSelectionDialog(getBaseUriBuilder().build().toString()), "dialog", request);
 	}
 
 	/*
@@ -353,7 +353,7 @@ public class OslcAutomationProvider implements RootAction {
 	public void doScheduleBuildDialog(StaplerRequest request, StaplerResponse response)
 	        throws ServletException, IOException {
 		requireGET();
-		response.forward(new ScheduleBuildDialog(getProviderURI().toString()), "dialog", request);
+		response.forward(new ScheduleBuildDialog(getBaseUriBuilder().build().toString()), "dialog", request);
 	}
 
 	private Job<?, ?> getJob(String name) {

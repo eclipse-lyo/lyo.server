@@ -25,20 +25,20 @@ import hudson.model.Hudson;
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
 public class BaseDialog extends AllView {
-	private String providerURI;
+	private String baseURI;
 
-	public BaseDialog(String providerURI, String title) {
+	public BaseDialog(String baseURI, String title) {
 	    super(title, Hudson.getInstance());
-		this.providerURI = providerURI;
+		this.baseURI = baseURI;
     }
 
 	/**
-	 * Get the absolute URI of the provider. (It is difficult to calculate from Jelly scripts.)
+	 * Get the base URI. (It is difficult to calculate from Jelly scripts.)
 	 *
-	 * @return the abosulte URI of the provider
+	 * @return the abosulte URI
 	 */
-	public String getProviderURI() {
-		return providerURI;
+	public String getBaseURI() {
+		return baseURI;
 	}
 }
 
