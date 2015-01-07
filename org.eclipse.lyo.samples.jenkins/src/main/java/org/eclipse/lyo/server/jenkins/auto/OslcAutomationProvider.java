@@ -26,6 +26,7 @@ import hudson.model.ParameterValue;
 import hudson.model.Result;
 import hudson.model.RootAction;
 import hudson.model.SimpleParameterDefinition;
+import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.BooleanParameterValue;
@@ -40,6 +41,7 @@ import hudson.model.PasswordParameterDefinition;
 import hudson.model.Run;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.security.csrf.CrumbIssuer;
 import hudson.util.PluginServletFilter;
 
@@ -587,7 +589,6 @@ public class OslcAutomationProvider implements RootAction {
 		}
 
 		AbstractProject<?, ?> project = (AbstractProject<?, ?>) job;
-		int nextBuildNumber = project.getNextBuildNumber();
 		Cause cause = new Cause() {
 			@Override
 			public String getShortDescription() {
@@ -597,24 +598,29 @@ public class OslcAutomationProvider implements RootAction {
 		};
 
 		ParameterInstance[] parameters = autoRequest.getInputParameters();
-		boolean suceeded;
+
+		QueueTaskFuture<?> future;
 		if (parameters.length == 0) {
-			suceeded = project.scheduleBuild(cause);
+			future = project.scheduleBuild2(0, cause);
 		} else {
 		    List<ParameterValue> values = getParameterValues(project, parameters);
-		    suceeded = project.scheduleBuild2(project.getQuietPeriod(), cause, new ParametersAction(values)) != null;
+		    future = project.scheduleBuild2(0, cause, new ParametersAction(values));
 		}
 
-		if (!suceeded) {
-			// Build already queued.
-			LOG.log(Level.WARNING, "Automation request rejected (409 conflict) since build is already queued: " + jobName);
-			throw HttpResponses.error(HttpServletResponse.SC_CONFLICT,
-					String.format("Job is already scheduled to be built <%s>", planURI.toString()));
+		try {
+			// Wait until the build actually starts instead of guessing what
+			// the build number will be. We could use next build number, but
+			// it's not guaranteed to be correct. It might be better to
+			// generate an identifier for the request and somehow tie it to the
+			// run when it finally starts.
+			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) future.waitForStart();
+			URI requestURI = getAutoRequestURI(job, build.getNumber());
+			response.setStatus(HttpServletResponse.SC_CREATED);
+			response.setHeader("Location", requestURI.toString());
+		} catch (Exception e) {
+			LOG.log(Level.WARNING, "Could not schedule build", e);
+			throw HttpResponses.error(HttpServletResponse.SC_CONFLICT, e);
 		}
-
-		URI requestURI = getAutoRequestURI(job, nextBuildNumber);
-		response.setStatus(HttpServletResponse.SC_CREATED);
-		response.setHeader("Location", requestURI.toString());
 	}
 
 	/*
