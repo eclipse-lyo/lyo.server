@@ -22,6 +22,10 @@
 
     <repositories>
         <repository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </repository>
+        <repository>
             <id>lyo-releases</id>
             <url>https://repo.eclipse.org/content/repositories/lyo-releases/</url>
             <releases>
@@ -42,7 +46,12 @@
             </snapshots>
         </repository>
     </repositories>
-
+    <pluginRepositories>
+        <pluginRepository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.lyo.oslc4j.core</groupId>
@@ -70,11 +79,6 @@
             <version>3.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.lyo.oslc4j.rio</groupId>
-            <artifactId>oslc4j-auto-common</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.lyo.core.query</groupId>
             <artifactId>oslc-query</artifactId>
             <version>3.0.0-SNAPSHOT</version>
@@ -83,7 +87,6 @@
             <groupId>org.eclipse.lyo.clients</groupId>
             <artifactId>oslc-java-client</artifactId>
             <version>3.0.0-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

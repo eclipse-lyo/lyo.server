@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2014 IBM Corporation.
+ * Copyright (c) 2013, 2015 IBM Corporation.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -17,6 +17,7 @@
  *     Samuel Padgett - add initial schedule build dialog
  *     Samuel Padgett - add where support for oslc_auto:producedByAutomationRequest
  *     Samuel Padgett - include error details on 4xx errors
+ *     Samuel Padgett - remove lyo.rio dependency
  *******************************************************************************/
 package org.eclipse.lyo.server.jenkins.auto;
 
@@ -72,6 +73,13 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
+import org.eclipse.lyo.client.oslc.resources.AutomationConstants;
+import org.eclipse.lyo.client.oslc.resources.AutomationPlan;
+import org.eclipse.lyo.client.oslc.resources.AutomationRequest;
+import org.eclipse.lyo.client.oslc.resources.AutomationResult;
+import org.eclipse.lyo.client.oslc.resources.CmConstants;
+import org.eclipse.lyo.client.oslc.resources.ParameterInstance;
+import org.eclipse.lyo.client.oslc.resources.Property;
 import org.eclipse.lyo.core.query.ComparisonTerm;
 import org.eclipse.lyo.core.query.InTerm;
 import org.eclipse.lyo.core.query.PName;
@@ -85,12 +93,6 @@ import org.eclipse.lyo.core.utils.marshallers.MarshallerConstants;
 import org.eclipse.lyo.core.utils.marshallers.OSLC4JContext;
 import org.eclipse.lyo.core.utils.marshallers.OSLC4JMarshaller;
 import org.eclipse.lyo.core.utils.marshallers.OSLC4JUnmarshaller;
-import org.eclipse.lyo.oslc4j.automation.AutomationConstants;
-import org.eclipse.lyo.oslc4j.automation.AutomationPlan;
-import org.eclipse.lyo.oslc4j.automation.AutomationRequest;
-import org.eclipse.lyo.oslc4j.automation.AutomationResult;
-import org.eclipse.lyo.oslc4j.automation.ParameterInstance;
-import org.eclipse.lyo.oslc4j.automation.Property;
 import org.eclipse.lyo.oslc4j.core.model.Compact;
 import org.eclipse.lyo.oslc4j.core.model.CreationFactory;
 import org.eclipse.lyo.oslc4j.core.model.Dialog;
@@ -192,7 +194,7 @@ public class OslcAutomationProvider implements RootAction {
 		prefixes.put(OslcConstants.OSLC_CORE_NAMESPACE_PREFIX, OslcConstants.OSLC_CORE_NAMESPACE);
 		prefixes.put(OslcConstants.RDF_NAMESPACE_PREFIX, OslcConstants.RDF_NAMESPACE);
 		prefixes.put(OslcConstants.RDFS_NAMESPACE_PREFIX, OslcConstants.RDFS_NAMESPACE);
-		prefixes.put(AutomationConstants.FOAF_NAMESPACE_PREFIX, AutomationConstants.FOAF_NAMESPACE);
+		prefixes.put(CmConstants.FOAF_NAMESPACE_PREFIX, CmConstants.FOAF_NAMESPACE);
 		prefixes.put(AutomationConstants.AUTOMATION_PREFIX, AutomationConstants.AUTOMATION_NAMESPACE);
 		prefixes.put(JenkinsAutoConstants.PREFIX, JenkinsAutoConstants.NAMESPACE);
 
