@@ -1,19 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.eclipse.lyo.oslc4j.server</groupId>
         <artifactId>lyo-server-build</artifactId>
-        <version>2.3.0.M2</version>
+        <version>2.3.0-SNAPSHOT</version>
         <relativePath>../org.eclipse.lyo.server.releng/pom.xml</relativePath>
     </parent>
     <groupId>org.eclipse.lyo.server</groupId>
-    <artifactId>oauth-webapp</artifactId>
-    <packaging>war</packaging>
-    <version>2.3.0.M2</version>
-    <name>Eclipse Lyo OAuth Provider - Template Webapp</name>
-    <description>A template webapp for implementing an OAuth provider.</description>
-    <url>http://maven.apache.org</url>
+    <artifactId>oauth-consumer-store</artifactId>
+    <version>2.3.0-SNAPSHOT</version>
+    <name>Lyo OAuth Consumer Store</name>
+    <description>File-based consumer store for Eclipse Lyo OAuth providers.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,79 +24,80 @@
         <url>http://git.eclipse.org/c/lyo/org.eclipse.lyo.server.git</url>
     </scm>
 
-    <repositories>
-        <repository>
-            <id>oauth</id>
-            <url>http://oauth.googlecode.com/svn/code/maven</url>
-        </repository>
-    </repositories>
-
     <dependencies>
-        <!-- Library-specific -->
-        <dependency>
-            <groupId>net.oauth.core</groupId>
-            <artifactId>oauth</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.oauth.core</groupId>
-            <artifactId>oauth-provider</artifactId>
-        </dependency>
-
-        <!-- Other Lyo modules -->
         <dependency>
             <groupId>org.eclipse.lyo.server</groupId>
             <artifactId>oauth-core</artifactId>
-            <version>2.3.0.M2</version>
-        </dependency>
-
-        <!-- Generic dependencies -->
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.servlet</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jstl</groupId>
-            <artifactId>jstl</artifactId>
+            <version>2.3.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.wink</groupId>
-            <artifactId>wink-server</artifactId>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>stax-api</artifactId>
-                    <groupId>javax.xml.stream</groupId>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.apache.wink</groupId>
-            <artifactId>wink-json4j</artifactId>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-iri</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-tdb</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
 
-        <!-- Test -->
+        <!--TEST-->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
-        <finalName>oauth-webapp</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.2.1</version>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -106,7 +105,6 @@
             </plugin>
         </plugins>
     </build>
-
     <distributionManagement>
         <repository>
             <id>repo.eclipse.org</id>
