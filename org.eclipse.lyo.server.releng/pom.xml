@@ -56,19 +56,19 @@
         <!--CQ 13874-->
         <groupId>org.apache.jena</groupId>
         <artifactId>jena-core</artifactId>
-        <version>3.0.1</version>
+        <version>3.6.0</version>
       </dependency>
       <dependency>
         <!--CQ 14319-->
         <groupId>org.apache.jena</groupId>
         <artifactId>jena-iri</artifactId>
-        <version>3.0.1</version>
+        <version>3.6.0</version>
       </dependency>
       <dependency>
         <!--CQ 14318-->
         <groupId>org.apache.jena</groupId>
         <artifactId>jena-tdb</artifactId>
-        <version>3.0.1</version>
+        <version>3.6.0</version>
       </dependency>
       <dependency>
         <!--CQ 14055-->
