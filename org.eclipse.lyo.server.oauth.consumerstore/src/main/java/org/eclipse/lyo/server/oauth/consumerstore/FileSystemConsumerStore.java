@@ -13,6 +13,7 @@
  *  
  *     Sam Padgett - initial API and implementation
  *     Michael Fiedler - updates to use file persistence
+ *     Rahul Singh Bhadauriya - AES encryption for the consumer secret
  *******************************************************************************/
 package org.eclipse.lyo.server.oauth.consumerstore;
 
@@ -47,7 +48,8 @@ import org.slf4j.LoggerFactory;
 /**
  * A simple RDF consumer store backed by an XML file on the filesystem.
  * 
- * NOTE: The shared consumer secret is stored as Base64 and is only obfuscated, not encrypted.
+ * NOTE: The shared consumer secret is stored as Base64 and is only obfuscated, not encrypted (unless
+ * the ctor with an encryption key is used).
  * 
  * @author Samuel Padgett <spadgett@us.ibm.com>
  */
