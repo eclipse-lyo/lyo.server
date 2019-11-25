@@ -1,18 +1,14 @@
-/*******************************************************************************
- * Copyright (c) 2012 IBM Corporation.
+/*
+ * Copyright (c) 2012-2019 IBM Corporation and others
  *
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Eclipse Distribution License v. 1.0 which accompanies this distribution.
- *  
- *  The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
- *  and the Eclipse Distribution License is available at
- *  http://www.eclipse.org/org/documents/edl-v10.php.
- *  
- *  Contributors:
- *  
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ *
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 package org.eclipse.lyo.server.oauth.core;
 
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +20,8 @@ import net.oauth.http.HttpMessage;
 
 import org.eclipse.lyo.server.oauth.core.consumer.ConsumerStore;
 import org.eclipse.lyo.server.oauth.core.consumer.ConsumerStoreException;
+import org.eclipse.lyo.server.oauth.core.token.IJaxTokenStrategy;
+import org.eclipse.lyo.server.oauth.core.token.JaxTokenStrategy;
 import org.eclipse.lyo.server.oauth.core.token.SimpleTokenStrategy;
 import org.eclipse.lyo.server.oauth.core.token.TokenStrategy;
 
@@ -36,6 +34,7 @@ import org.eclipse.lyo.server.oauth.core.token.TokenStrategy;
 public class OAuthConfiguration {
 	private OAuthValidator validator;
 	private TokenStrategy tokenStrategy;
+	private IJaxTokenStrategy jaxTokenStrategy;
 	private ConsumerStore consumerStore = null;
 	private Application application = null;
 	private boolean v1_0Allowed = true;
@@ -49,6 +48,7 @@ public class OAuthConfiguration {
 	private OAuthConfiguration() {
 		validator = new SimpleOAuthValidator();
 		tokenStrategy = new SimpleTokenStrategy();
+		jaxTokenStrategy = new JaxTokenStrategy(128, 1024);
 	}
 
 	/**
@@ -74,8 +74,8 @@ public class OAuthConfiguration {
 	 * 
 	 * @return the token strategy
 	 */
-	public TokenStrategy getTokenStrategy() {
-		return tokenStrategy;
+	public IJaxTokenStrategy getTokenStrategy() {
+		return jaxTokenStrategy;
 	}
 
 	/**
@@ -83,9 +83,23 @@ public class OAuthConfiguration {
 	 * 
 	 * @param tokenStrategy the strategy
 	 */
-	public void setTokenStrategy(TokenStrategy tokenStrategy) {
+	public void setTokenStrategy(IJaxTokenStrategy tokenStrategy) {
+		this.jaxTokenStrategy = tokenStrategy;
+	}
+
+	public TokenStrategy getLegacyTokenStrategy() {
+		return tokenStrategy;
+	}
+
+	/**
+	 * Sets the strategy used to generate and verify OAuth tokens.
+	 *
+	 * @param tokenStrategy the strategy
+	 */
+	public void setLegacyTokenStrategy(TokenStrategy tokenStrategy) {
 		this.tokenStrategy = tokenStrategy;
 	}
+
 
 	/**
 	 * Gets the store used for managing consumers.

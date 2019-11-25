@@ -1,15 +1,14 @@
 /*
- Copyright (c) 2012-2019 IBM Corporation and others
-
- All rights reserved. This program and the accompanying materials
- are made available under the terms of the Eclipse Public License v1.0
- and Eclipse Distribution License v. 1.0 which accompanies this distribution.
-
- The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
- and the Eclipse Distribution License is available at
- http://www.eclipse.org/org/documents/edl-v10.php.
+ * Copyright (c) 2012-2019 IBM Corporation and others
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ *
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ * http://www.eclipse.org/org/documents/edl-v10.php.
  */
-
 package org.eclipse.lyo.server.oauth.webapp.services;
 
 import java.io.IOException;
@@ -21,18 +20,9 @@ import java.util.UUID;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
 
 import net.oauth.OAuth;
 import net.oauth.OAuth.Parameter;
@@ -52,7 +42,9 @@ import org.eclipse.lyo.server.oauth.core.OAuthConfiguration;
 import org.eclipse.lyo.server.oauth.core.OAuthRequest;
 import org.eclipse.lyo.server.oauth.core.consumer.ConsumerStoreException;
 import org.eclipse.lyo.server.oauth.core.consumer.LyoOAuthConsumer;
-import org.eclipse.lyo.server.oauth.core.token.TokenStrategy;
+import org.eclipse.lyo.server.oauth.core.token.IJaxTokenStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Issues OAuth request tokens, handles authentication, and then exchanges
@@ -65,46 +57,55 @@ import org.eclipse.lyo.server.oauth.core.token.TokenStrategy;
 @Path("/oauth")
 public class OAuthService {
 
-	@Context
-	protected HttpServletRequest httpRequest;
-
-	@Context
-	protected HttpServletResponse httpResponse;
+	private final Logger log = LoggerFactory.getLogger(OAuthService.class);
 
 	@GET
 	@Path("/requestToken")
-	public Response doGetRequestToken() throws IOException, ServletException {
-		return doPostRequestToken();
+	public Response doGetRequestToken(@Context HttpServletRequest httpRequest,
+									  @Context HttpServletResponse httpResponse,
+									  @Context UriInfo uriInfo) {
+//		MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+		return doRequestTokenInternal(httpRequest, httpResponse);
 	}
 	
 	/**
 	 * Responds with a request token and token secret.
 	 * 
 	 * @return the response
-	 * @throws IOException
-	 *             on I/O errors
-	 * @throws ServletException
-	 *             on servlet errors
 	 */
 	@POST
+	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	@Path("/requestToken")
-	public Response doPostRequestToken() throws IOException, ServletException {
+	public Response doPostRequestToken(@Context HttpServletRequest httpRequest,
+									   @Context HttpServletResponse httpResponse,
+									   Form requestTokenForm) {
+		MultivaluedMap<String, String> params = requestTokenForm.asMap();
+		OAuthRequest.OAuthServletRequestWrapper requestWrapper = new OAuthRequest.OAuthServletRequestWrapper(httpRequest, params);
+		return doRequestTokenInternal(requestWrapper, httpResponse);
+	}
+
+	private Response doRequestTokenInternal(HttpServletRequest httpRequest,
+											HttpServletResponse httpResponse) {
 		try {
-			OAuthRequest oAuthRequest = validateRequest();
+			OAuthRequest oAuthRequest = validateRequest(httpRequest);
 
 			// Generate the token.
 			OAuthConfiguration.getInstance().getTokenStrategy()
 					.generateRequestToken(oAuthRequest);
+			log.trace("Token generated");
 
 			// Check for OAuth 1.0a authentication.
 			boolean callbackConfirmed = confirmCallback(oAuthRequest);
-			
+
 			// Respond to the consumer.
 			OAuthAccessor accessor = oAuthRequest.getAccessor();
 			return respondWithToken(accessor.requestToken,
 					accessor.tokenSecret, callbackConfirmed);
 		} catch (OAuthException e) {
-			return respondWithOAuthProblem(e);
+			log.warn("Error generating a secret token", e);
+			return respondWithOAuthProblem(e, httpRequest, httpResponse);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -119,7 +120,9 @@ public class OAuthService {
 	 */
 	@GET
 	@Path("/authorize")
-	public Response authorize() throws ServletException, IOException {
+	public Response authorize(@Context HttpServletRequest httpRequest,
+							  @Context HttpServletResponse httpResponse)
+			throws ServletException, IOException {
 		try {
 			/*
 			 * Check that the request token is valid and determine what consumer
@@ -129,11 +132,10 @@ public class OAuthService {
 			 */
 			OAuthMessage message = OAuthServlet.getMessage(httpRequest, null);
 			OAuthConfiguration config = OAuthConfiguration.getInstance();
-			String consumerKey = config.getTokenStrategy()
-					.validateRequestToken(httpRequest, message);
+			String consumerKey = config.getTokenStrategy().validateRequestToken(message);
 
-			LyoOAuthConsumer consumer = OAuthConfiguration.getInstance()
-					.getConsumerStore().getConsumer(consumerKey);
+			LyoOAuthConsumer consumer = OAuthConfiguration.getInstance().getConsumerStore()
+					.getConsumer(consumerKey);
 
 			// Pass some data to the JSP.
 			httpRequest.setAttribute("requestToken", message.getToken());
@@ -145,24 +147,22 @@ public class OAuthService {
 			httpRequest.setAttribute("callbackConfirmed", new Boolean(callbackConfirmed));
 
 			// The application name is displayed on the OAuth login page.
-			httpRequest.setAttribute("applicationName",
-					config.getApplication().getName());
+			httpRequest.setAttribute("applicationName", config.getApplication().getName());
 
-			httpResponse.setHeader(OAuthServerConstants.HDR_CACHE_CONTROL,
-					OAuthServerConstants.NO_CACHE);
+			httpResponse.setHeader(OAuthServerConstants.HDR_CACHE_CONTROL, OAuthServerConstants.NO_CACHE);
 			if (config.getApplication().isAuthenticated(httpRequest)) {
 				// Show the grant access page.
-				httpRequest.getRequestDispatcher("/oauth/authorize.jsp").forward(
-						httpRequest, httpResponse);
+				httpRequest.getRequestDispatcher("/oauth/authorize.jsp").forward(httpRequest,
+						httpResponse);
 			} else {
 				// Show the login page.
-				httpRequest.getRequestDispatcher("/oauth/login.jsp").forward(
-						httpRequest, httpResponse);
+				httpRequest.getRequestDispatcher("/oauth/login.jsp").forward(httpRequest,
+						httpResponse);
 			}
 
 			return null;
 		} catch (OAuthException e) {
-			return respondWithOAuthProblem(e);
+			return respondWithOAuthProblem(e, httpRequest, httpResponse);
 		}
 	}
 
@@ -174,7 +174,8 @@ public class OAuthService {
 	 */
 	@POST
 	@Path("/login")
-	public Response login(@FormParam("id") String id,
+	public Response login(@Context HttpServletRequest httpRequest,
+						  @FormParam("id") String id,
 						  @FormParam("password") String password,
 						  @FormParam("requestToken") String requestToken) {
 		CSRFPrevent.check(httpRequest);
@@ -207,7 +208,8 @@ public class OAuthService {
 
 	@POST
 	@Path("/internal/approveToken")
-	public Response authorize(@FormParam("requestToken") String requestToken) {
+	public Response authorize(@Context HttpServletRequest httpRequest,
+							  @FormParam("requestToken") String requestToken) {
 		CSRFPrevent.check(httpRequest);
 
 		try {
@@ -218,10 +220,10 @@ public class OAuthService {
 			return Response.status(Status.SERVICE_UNAVAILABLE).build();
 		}
 
-		return authorizeToken(requestToken);
+		return authorizeToken(requestToken, httpRequest);
 	}
 
-	private Response authorizeToken(String requestToken) {
+	private Response authorizeToken(String requestToken, HttpServletRequest httpRequest) {
 		try {
 			OAuthConfiguration.getInstance().getTokenStrategy()
 					.markRequestTokenAuthorized(httpRequest, requestToken);
@@ -236,8 +238,9 @@ public class OAuthService {
 
 	@GET
 	@Path("/accessToken")
-	public Response doGetAccessToken() throws IOException, ServletException {
-		return doPostAccessToken();
+	public Response doGetAccessToken(@Context HttpServletRequest httpRequest,
+									 @Context HttpServletResponse httpResponse) {
+		return doAccessTokenInternal(httpRequest, httpResponse);
 	}
 
 	/**
@@ -245,22 +248,27 @@ public class OAuthService {
 	 * The request must be signed and the request token valid.
 	 *
 	 * @return the response
-	 * @throws IOException
-	 *             on I/O errors
-	 * @throws ServletException
-	 *             on servlet errors
 	 */
 	@POST
+	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	@Path("/accessToken")
-	public Response doPostAccessToken() throws IOException, ServletException {
+	public Response doPostAccessToken(@Context HttpServletRequest httpRequest,
+									  @Context HttpServletResponse httpResponse,
+									  Form accessTokenForm) {
+		MultivaluedMap<String, String> params = accessTokenForm.asMap();
+		OAuthRequest.OAuthServletRequestWrapper wrappedRequest = new OAuthRequest.OAuthServletRequestWrapper(httpRequest, params);
+		return doAccessTokenInternal(wrappedRequest, httpResponse);
+	}
+
+	private Response doAccessTokenInternal(HttpServletRequest httpRequest,
+										   HttpServletResponse httpResponse) {
 		try {
 			// Validate the request is signed and check that the request token
 			// is valid.
-			OAuthRequest oAuthRequest = validateRequest();
+			OAuthRequest oAuthRequest = validateRequest(httpRequest);
 			OAuthConfiguration config = OAuthConfiguration.getInstance();
-			TokenStrategy strategy = config.getTokenStrategy();
-			strategy.validateRequestToken(httpRequest,
-					oAuthRequest.getMessage());
+			IJaxTokenStrategy strategy = config.getTokenStrategy();
+			strategy.validateRequestToken(oAuthRequest.getMessage());
 
 			// The verification code MUST be passed in the request if this is
 			// OAuth 1.0a.
@@ -271,12 +279,15 @@ public class OAuthService {
 
 			// Generate a new access token for this accessor.
 			strategy.generateAccessToken(oAuthRequest);
+			log.debug("Access token generated");
 
 			// Send the new token and secret back to the consumer.
 			OAuthAccessor accessor = oAuthRequest.getAccessor();
 			return respondWithToken(accessor.accessToken, accessor.tokenSecret);
 		} catch (OAuthException e) {
-			return respondWithOAuthProblem(e);
+			return respondWithOAuthProblem(e, httpRequest, httpResponse);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -294,12 +305,12 @@ public class OAuthService {
 	// Some consumers do not set an appropriate Content-Type header.
 	//@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Response provisionalKey()
+	public Response provisionalKey(@Context HttpServletRequest httpRequest,
+								   @Context HttpServletResponse httpResponse)
 			throws NullPointerException, IOException {
 		try {
 			// Create the consumer from the request.
-			JSONObject request = (JSONObject) JSON.parse(httpRequest
-					.getInputStream());
+			JSONObject request = (JSONObject) JSON.parse(httpRequest.getInputStream());
 
 			String name = null;
 			if (request.has("name") && request.get("name") != null) {
@@ -307,7 +318,7 @@ public class OAuthService {
 			}
 
 			if (name == null || name.trim().equals("")) {
-				name = getRemoteHost();
+				name = getRemoteHost(httpRequest);
 			}
 
 			String secret = request.getString("secret");
@@ -354,15 +365,17 @@ public class OAuthService {
 	 *             on errors showing the JSP
 	 * @throws IOException
 	 *             on errors showing the JSP
-	 * @see #showConsumerKeyManagementPage()
+	 * @see #showConsumerKeyManagementPage(HttpServletRequest, HttpServletResponse)
 	 */
 	@GET
 	@Path("/approveKey")
 	@Produces({ MediaType.TEXT_HTML })
-	public Response showApproveKeyPage(@QueryParam("key") String key)
+	public Response showApproveKeyPage(@Context HttpServletRequest httpRequest,
+									   @Context HttpServletResponse httpResponse,
+									   @QueryParam("key") String key)
 			throws ServletException, IOException {
 		if (key == null || "".equals(key)) {
-			return showConsumerKeyManagementPage();
+			return showConsumerKeyManagementPage(httpRequest, httpResponse);
 		}
 
 		try {
@@ -372,7 +385,7 @@ public class OAuthService {
 			httpRequest.setAttribute("applicationName", app.getName());
 
 			if (!app.isAdminSession(httpRequest)) {
-				return showAdminLogin();
+				return showAdminLogin(httpRequest, httpResponse);
 			}
 
 			LyoOAuthConsumer provisionalConsumer = OAuthConfiguration
@@ -401,7 +414,7 @@ public class OAuthService {
 			return Response.status(Status.CONFLICT).type(MediaType.TEXT_PLAIN)
 					.entity(e.getMessage()).build();
 		} catch (OAuthProblemException e) {
-			return respondWithOAuthProblem(e);
+			return respondWithOAuthProblem(e, httpRequest, httpResponse);
 		}
 	}
 
@@ -417,14 +430,15 @@ public class OAuthService {
 	 */
 	@GET
 	@Path("/admin")
-	public Response showConsumerKeyManagementPage() throws ServletException,
-			IOException {
+	public Response showConsumerKeyManagementPage(@Context HttpServletRequest httpRequest,
+												  @Context HttpServletResponse httpResponse)
+			throws ServletException, IOException {
 		try {
 			Application app = OAuthConfiguration.getInstance().getApplication();
 
 			httpRequest.setAttribute("applicationName", app.getName());
 			if (!app.isAdminSession(httpRequest)) {
-				return showAdminLogin();
+				return showAdminLogin(httpRequest, httpResponse);
 			}
 		} catch (OAuthException e) {
 			return Response.status(Status.SERVICE_UNAVAILABLE).build();
@@ -445,7 +459,9 @@ public class OAuthService {
 	 */
 	@POST
 	@Path("/adminLogin")
-	public Response login(@FormParam("id") String id,
+	public Response login(@Context HttpServletRequest httpRequest,
+						  @Context HttpServletResponse httpResponse,
+						  @FormParam("id") String id,
 						  @FormParam("password") String password) {
 		CSRFPrevent.check(httpRequest);
 
@@ -477,8 +493,7 @@ public class OAuthService {
 		boolean callbackConfirmed = OAuthConfiguration
 				.getInstance()
 				.getTokenStrategy()
-				.getCallback(httpRequest,
-						oAuthRequest.getAccessor().requestToken) != null;
+				.getCallback(oAuthRequest.getAccessor().requestToken) != null;
 		if (callbackConfirmed) {
 			oAuthRequest.getConsumer().setOAuthVersion(
 					LyoOAuthConsumer.OAuthVersion.OAUTH_1_0A);
@@ -506,14 +521,16 @@ public class OAuthService {
 	 * @throws IOException
 	 *             on I/O errors
 	 */
-	protected OAuthRequest validateRequest() throws OAuthException, IOException {
+	protected OAuthRequest validateRequest(HttpServletRequest httpRequest) throws OAuthException, IOException {
 		OAuthRequest oAuthRequest = new OAuthRequest(httpRequest);
 		try {
 			OAuthValidator validator = OAuthConfiguration.getInstance()
 					.getValidator();
 			validator.validateMessage(oAuthRequest.getMessage(),
 					oAuthRequest.getAccessor());
+			log.debug("Request validated for {}", oAuthRequest.getAccessor().consumer.consumerKey);
 		} catch (URISyntaxException e) {
+			log.warn("Failed to validate request from {}", oAuthRequest.getAccessor().consumer.consumerKey);
 			throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -535,21 +552,44 @@ public class OAuthService {
 		}
 		
 		String responseBody = OAuth.formEncode(oAuthParameters);
+		log.debug("Sending token to the consumer");
+		if (log.isTraceEnabled()) {
+			log.trace("Body: {}", prettyPrint(oAuthParameters));
+		}
 		return Response.ok(responseBody)
 				.type(MediaType.APPLICATION_FORM_URLENCODED)
 				.header(OAuthServerConstants.HDR_CACHE_CONTROL,
 						OAuthServerConstants.NO_CACHE).build();
 	}
 
-	protected Response respondWithOAuthProblem(OAuthException e)
-			throws IOException, ServletException {
+	private String prettyPrint(List<Parameter> oAuthParameters) {
+		StringBuilder sb = new StringBuilder();
+		for (Parameter parameter : oAuthParameters) {
+			sb.append(parameter.getKey())
+					.append('=')
+					.append(parameter.getValue())
+					.append(';');
+		}
+		return sb.toString();
+	}
+
+	protected Response respondWithOAuthProblem(OAuthException e, HttpServletRequest httpRequest,
+											   HttpServletResponse httpResponse) {
+		log.warn("Problem encountered while preparing response", e);
 		try {
 			OAuthServlet.handleException(httpResponse, e, OAuthConfiguration
 					.getInstance().getApplication().getRealm(httpRequest));
 		} catch (OAuthProblemException serviceUnavailableException) {
+			log.debug("OAuthProblemException thrown", serviceUnavailableException);
 			return Response.status(Status.SERVICE_UNAVAILABLE).build();
+		} catch (ServletException ex) {
+			log.debug("ServletException thrown", ex);
+			throw new WebApplicationException(ex);
+		} catch (IOException ex) {
+			log.debug("IO exception", ex);
+			throw new IllegalStateException(ex);
 		}
-		
+
 		return Response.status(Status.UNAUTHORIZED).build();
 	}
 
@@ -571,7 +611,7 @@ public class OAuthService {
 				// asked for a request token.
 				String requestToken = message.getToken();
 				callback = OAuthConfiguration.getInstance().getTokenStrategy()
-						.getCallback(httpRequest, requestToken);
+						.getCallback(requestToken);
 		}
 
 		if (callback == null) {
@@ -583,14 +623,14 @@ public class OAuthService {
 		if (consumer.getOAuthVersion() == LyoOAuthConsumer.OAuthVersion.OAUTH_1_0A) {
 			String verificationCode = OAuthConfiguration.getInstance()
 					.getTokenStrategy()
-					.generateVerificationCode(httpRequest, message.getToken());
+					.generateVerificationCode(message.getToken());
 			uriBuilder.queryParam(OAuth.OAUTH_VERIFIER, verificationCode);
 		}
 
 		return uriBuilder.build().toString();
 	}
 
-	private String getRemoteHost() {
+	private String getRemoteHost(HttpServletRequest httpRequest) {
 		try {
 			// Try to get the hostname of the consumer.
 			return InetAddress.getByName(httpRequest.getRemoteHost())
@@ -605,7 +645,8 @@ public class OAuthService {
 		}
 	}
 
-	private Response showAdminLogin() throws ServletException, IOException {
+	private Response showAdminLogin(HttpServletRequest httpRequest,
+									HttpServletResponse httpResponse) throws ServletException, IOException {
 		httpResponse.setHeader(OAuthServerConstants.HDR_CACHE_CONTROL, OAuthServerConstants.NO_CACHE);
 		StringBuffer callback = httpRequest.getRequestURL();
 		String query = httpRequest.getQueryString();

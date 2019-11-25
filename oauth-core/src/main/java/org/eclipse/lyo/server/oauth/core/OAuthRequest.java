@@ -13,9 +13,14 @@ package org.eclipse.lyo.server.oauth.core;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.ws.rs.core.MultivaluedMap;
 
 import net.oauth.OAuth;
 import net.oauth.OAuthAccessor;
@@ -71,15 +76,58 @@ public class OAuthRequest {
 		String token = this.message.getToken();
 		if (token != null) {
 			this.accessor.tokenSecret = OAuthConfiguration.getInstance()
-					.getTokenStrategy().getTokenSecret(this.httpRequest, token);
+					.getTokenStrategy().getTokenSecret(token);
 		}
 	}
-	
+
+	public static class OAuthServletRequestWrapper extends HttpServletRequestWrapper {
+
+		private final Map<String, String[]> formParams;
+
+		/**
+		 * Constructs a request object wrapping the given request.
+		 *
+		 * @param request
+		 * @throws IllegalArgumentException if the request is null
+		 */
+		public OAuthServletRequestWrapper(HttpServletRequest request,
+										  MultivaluedMap<String, String> formParams) {
+			super(request);
+			this.formParams = aggregateMultimap(formParams);
+		}
+
+		private Map<String, String[]> aggregateMultimap(MultivaluedMap<String, String> multimap) {
+			HashMap<String, String[]> map = new HashMap<>();
+			multimap.forEach((key, strings) -> map.put(key, strings.toArray(new String[0])));
+			return map;
+		}
+
+		@Override
+		public String getParameter(String name) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Map<String, String[]> getParameterMap() {
+			return formParams;
+		}
+
+		@Override
+		public Enumeration<String> getParameterNames() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public String[] getParameterValues(String name) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
 	public HttpServletRequest getHttpRequest() {
 		return httpRequest;
 	}
 
-	public void setHttpRequest(HttpServletRequest httpRequest) {
+	private void setHttpRequest(HttpServletRequest httpRequest) {
 		this.httpRequest = httpRequest;
 	}
 
