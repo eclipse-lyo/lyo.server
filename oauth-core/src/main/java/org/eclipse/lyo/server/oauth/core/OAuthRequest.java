@@ -105,7 +105,11 @@ public class OAuthRequest {
 
 		@Override
 		public String getParameter(String name) {
-			throw new UnsupportedOperationException();
+			String[] values = formParams.get(name);
+			if (values == null || values.length == 0) {
+				return null;
+			}
+			return values[0];
 		}
 
 		@Override
@@ -115,12 +119,12 @@ public class OAuthRequest {
 
 		@Override
 		public Enumeration<String> getParameterNames() {
-			throw new UnsupportedOperationException();
+			return Collections.enumeration(formParams.keySet());
 		}
 
 		@Override
 		public String[] getParameterValues(String name) {
-			throw new UnsupportedOperationException();
+			return formParams.get(name);
 		}
 	}
 
