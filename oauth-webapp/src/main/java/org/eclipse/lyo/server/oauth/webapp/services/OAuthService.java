@@ -92,7 +92,7 @@ public class OAuthService {
 			// Generate the token.
 			OAuthConfiguration.getInstance().getJaxTokenStrategy()
 					.generateRequestToken(oAuthRequest);
-			log.trace("Token generated");
+			log.debug("Request token generated");
 
 			// Check for OAuth 1.0a authentication.
 			boolean callbackConfirmed = confirmCallback(oAuthRequest);
@@ -102,7 +102,7 @@ public class OAuthService {
 			return respondWithToken(accessor.requestToken,
 					accessor.tokenSecret, callbackConfirmed);
 		} catch (OAuthException e) {
-			log.warn("Error generating a secret token", e);
+			log.warn("Error generating a request token", e);
 			return respondWithOAuthProblem(e, httpRequest, httpResponse);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
