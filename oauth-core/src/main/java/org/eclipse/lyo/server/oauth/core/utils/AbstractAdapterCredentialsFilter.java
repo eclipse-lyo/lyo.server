@@ -442,7 +442,7 @@ abstract public class AbstractAdapterCredentialsFilter<Credentials, Connection> 
 		 * Override some SimpleTokenStrategy methods so that we can keep the
 		 * Connector associated with the OAuth tokens.
 		 */
-		config.setTokenStrategy(new JaxTokenStrategy(128, 4096) {
+		config.setJaxTokenStrategy(new JaxTokenStrategy(128, 4096) {
 			@SuppressWarnings("unchecked")
 			@Override
 			public void markRequestTokenAuthorized(

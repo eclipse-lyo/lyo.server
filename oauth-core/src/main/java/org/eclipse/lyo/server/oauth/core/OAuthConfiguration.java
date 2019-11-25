@@ -74,7 +74,7 @@ public class OAuthConfiguration {
 	 * 
 	 * @return the token strategy
 	 */
-	public IJaxTokenStrategy getTokenStrategy() {
+	public IJaxTokenStrategy getJaxTokenStrategy() {
 		return jaxTokenStrategy;
 	}
 
@@ -83,11 +83,15 @@ public class OAuthConfiguration {
 	 * 
 	 * @param tokenStrategy the strategy
 	 */
-	public void setTokenStrategy(IJaxTokenStrategy tokenStrategy) {
+	public void setJaxTokenStrategy(IJaxTokenStrategy tokenStrategy) {
 		this.jaxTokenStrategy = tokenStrategy;
 	}
 
-	public TokenStrategy getLegacyTokenStrategy() {
+    /**
+     * See {@link #getJaxTokenStrategy()}
+     * @return
+     */
+	public TokenStrategy getTokenStrategy() {
 		return tokenStrategy;
 	}
 
@@ -96,7 +100,7 @@ public class OAuthConfiguration {
 	 *
 	 * @param tokenStrategy the strategy
 	 */
-	public void setLegacyTokenStrategy(TokenStrategy tokenStrategy) {
+	public void setTokenStrategy(TokenStrategy tokenStrategy) {
 		this.tokenStrategy = tokenStrategy;
 	}
 

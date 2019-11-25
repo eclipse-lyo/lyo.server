@@ -13,6 +13,7 @@ package org.eclipse.lyo.server.oauth.core;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class OAuthRequest {
 		String token = this.message.getToken();
 		if (token != null) {
 			this.accessor.tokenSecret = OAuthConfiguration.getInstance()
-					.getTokenStrategy().getTokenSecret(token);
+					.getJaxTokenStrategy().getTokenSecret(token);
 		}
 	}
 
@@ -160,7 +161,7 @@ public class OAuthRequest {
 		try {
 			OAuthConfiguration config = OAuthConfiguration.getInstance();
 			config.getValidator().validateMessage(message, accessor);
-			config.getTokenStrategy().validateAccessToken(this);
+			config.getJaxTokenStrategy().validateAccessToken(this);
 		} catch (URISyntaxException e) {
 			throw new ServletException(e);
 		}

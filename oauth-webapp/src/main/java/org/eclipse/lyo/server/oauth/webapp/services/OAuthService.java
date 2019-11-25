@@ -90,7 +90,7 @@ public class OAuthService {
 			OAuthRequest oAuthRequest = validateRequest(httpRequest);
 
 			// Generate the token.
-			OAuthConfiguration.getInstance().getTokenStrategy()
+			OAuthConfiguration.getInstance().getJaxTokenStrategy()
 					.generateRequestToken(oAuthRequest);
 			log.trace("Token generated");
 
@@ -132,7 +132,7 @@ public class OAuthService {
 			 */
 			OAuthMessage message = OAuthServlet.getMessage(httpRequest, null);
 			OAuthConfiguration config = OAuthConfiguration.getInstance();
-			String consumerKey = config.getTokenStrategy().validateRequestToken(message);
+			String consumerKey = config.getJaxTokenStrategy().validateRequestToken(message);
 
 			LyoOAuthConsumer consumer = OAuthConfiguration.getInstance().getConsumerStore()
 					.getConsumer(consumerKey);
@@ -195,7 +195,7 @@ public class OAuthService {
 		}
 
 		try {
-			OAuthConfiguration.getInstance().getTokenStrategy()
+			OAuthConfiguration.getInstance().getJaxTokenStrategy()
 					.markRequestTokenAuthorized(httpRequest, requestToken);
 		} catch (OAuthException e) {
 			return Response.status(Status.CONFLICT)
@@ -225,7 +225,7 @@ public class OAuthService {
 
 	private Response authorizeToken(String requestToken, HttpServletRequest httpRequest) {
 		try {
-			OAuthConfiguration.getInstance().getTokenStrategy()
+			OAuthConfiguration.getInstance().getJaxTokenStrategy()
 					.markRequestTokenAuthorized(httpRequest, requestToken);
 		} catch (OAuthException e) {
 			return Response.status(Status.CONFLICT)
@@ -267,7 +267,7 @@ public class OAuthService {
 			// is valid.
 			OAuthRequest oAuthRequest = validateRequest(httpRequest);
 			OAuthConfiguration config = OAuthConfiguration.getInstance();
-			IJaxTokenStrategy strategy = config.getTokenStrategy();
+			IJaxTokenStrategy strategy = config.getJaxTokenStrategy();
 			strategy.validateRequestToken(oAuthRequest.getMessage());
 
 			// The verification code MUST be passed in the request if this is
@@ -492,7 +492,7 @@ public class OAuthService {
 			throws OAuthException {
 		boolean callbackConfirmed = OAuthConfiguration
 				.getInstance()
-				.getTokenStrategy()
+				.getJaxTokenStrategy()
 				.getCallback(oAuthRequest.getAccessor().requestToken) != null;
 		if (callbackConfirmed) {
 			oAuthRequest.getConsumer().setOAuthVersion(
@@ -610,7 +610,7 @@ public class OAuthService {
 				// If this is OAuth 1.0a, the callback was passed when the consumer
 				// asked for a request token.
 				String requestToken = message.getToken();
-				callback = OAuthConfiguration.getInstance().getTokenStrategy()
+				callback = OAuthConfiguration.getInstance().getJaxTokenStrategy()
 						.getCallback(requestToken);
 		}
 
@@ -622,7 +622,7 @@ public class OAuthService {
 				.queryParam(OAuth.OAUTH_TOKEN, message.getToken());
 		if (consumer.getOAuthVersion() == LyoOAuthConsumer.OAuthVersion.OAUTH_1_0A) {
 			String verificationCode = OAuthConfiguration.getInstance()
-					.getTokenStrategy()
+					.getJaxTokenStrategy()
 					.generateVerificationCode(message.getToken());
 			uriBuilder.queryParam(OAuth.OAUTH_VERIFIER, verificationCode);
 		}
