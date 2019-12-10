@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MultivaluedMap;
 
 import net.oauth.OAuth;
@@ -31,6 +32,7 @@ import net.oauth.OAuthProblemException;
 import net.oauth.OAuthValidator;
 import net.oauth.server.OAuthServlet;
 
+import org.eclipse.lyo.oslc4j.core.OSLC4JUtils;
 import org.eclipse.lyo.server.oauth.core.consumer.LyoOAuthConsumer;
 
 /**
@@ -58,11 +60,29 @@ public class OAuthRequest {
 	private HttpServletRequest httpRequest;
 	private OAuthMessage message;
 	private OAuthAccessor accessor;
-	
+
+	/**
+	 * Use {@link #OAuthRequest(HttpServletRequest, boolean)} instead.
+	 */
+	@Deprecated
 	public OAuthRequest(HttpServletRequest request)
 			throws OAuthException, IOException {
+		// preserving legacy behaviour
+		this(request, false);
+	}
+
+	/**
+	 * @param detectLyoURI Determines if {@link OSLC4JUtils#resolveFullUri(HttpServletRequest)} shall
+	 *                     be used.
+	 * @throws OAuthException OAuth request is invalid
+	 */
+	public OAuthRequest(HttpServletRequest request, boolean detectLyoURI) throws OAuthException, IOException {
 		this.httpRequest = request;
-		this.message = OAuthServlet.getMessage(httpRequest, null);
+		String fullUrl = null;
+		if (detectLyoURI) {
+			fullUrl = OSLC4JUtils.resolveFullUri(request);
+		}
+		this.message = OAuthServlet.getMessage(httpRequest, fullUrl);
 
 		LyoOAuthConsumer consumer = OAuthConfiguration.getInstance()
 				.getConsumerStore().getConsumer(message);
