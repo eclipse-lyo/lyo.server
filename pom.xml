@@ -17,11 +17,17 @@
   <properties>
     <version.jena>3.13.0</version.jena>
     <version.httpclient>4.5.5</version.httpclient>
-
+    <lyo.version>${project.version}</lyo.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.eclipse.lyo.oslc4j.core</groupId>
+        <artifactId>oslc4j-core</artifactId>
+        <version>${lyo.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>net.oauth.core</groupId>
         <artifactId>oauth</artifactId>
@@ -141,7 +147,7 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.1.1</version>
           <configuration>
-            <additionalparam>-Xdoclint:none</additionalparam>
+            <doclint>all,-missing</doclint>
           </configuration>
           <executions>
             <execution>
