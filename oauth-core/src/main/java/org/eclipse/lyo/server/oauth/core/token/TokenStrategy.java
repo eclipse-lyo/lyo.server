@@ -25,9 +25,12 @@ import org.eclipse.lyo.server.oauth.core.OAuthRequest;
  * Manages and validates OAuth tokens and token secrets.
  * {@link SimpleTokenStrategy} is a basic implementation, but you can implement
  * this interface to generate and validate OAuth tokens your own way.
+ *
+ * <p><b>Deprecated due to not using JAX-RS inputs. Broken in Jersey.</b></p>
  * 
  * @author Samuel Padgett
  */
+@Deprecated
 public interface TokenStrategy {
 	/**
 	 * Generates a request token and token secret and sets it in the accessor in

@@ -1,5 +1,5 @@
-/*******************************************************************************
- * Copyright (c) 2012, 2014 IBM Corporation.
+/*
+ * Copyright (c) 2012-2019 IBM Corporation and others
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -8,13 +8,7 @@
  * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
  * and the Eclipse Distribution License is available at
  * http://www.eclipse.org/org/documents/edl-v10.php.
- *
- * Contributors:
- *
- *     Michael Fiedler     - initial API and implementation for Bugzilla adapter
- *     Susumu Fukuda       - extracted this class from Bugzilla adapter CredentialsFilter
- *     Samuel Padgett      - fix NPEx when Exception.getCause() returns null in Application.login()
- *******************************************************************************/
+ */
 package org.eclipse.lyo.server.oauth.core.utils;
 
 import java.io.IOException;
@@ -47,8 +41,8 @@ import org.eclipse.lyo.server.oauth.core.OAuthConfiguration;
 import org.eclipse.lyo.server.oauth.core.OAuthRequest;
 import org.eclipse.lyo.server.oauth.core.consumer.ConsumerStore;
 import org.eclipse.lyo.server.oauth.core.consumer.LyoOAuthConsumer;
+import org.eclipse.lyo.server.oauth.core.token.JaxTokenStrategy;
 import org.eclipse.lyo.server.oauth.core.token.LRUCache;
-import org.eclipse.lyo.server.oauth.core.token.SimpleTokenStrategy;
 
 /**
  * <h3>Overview</h3>
@@ -448,7 +442,7 @@ abstract public class AbstractAdapterCredentialsFilter<Credentials, Connection> 
 		 * Override some SimpleTokenStrategy methods so that we can keep the
 		 * Connector associated with the OAuth tokens.
 		 */
-		config.setTokenStrategy(new SimpleTokenStrategy() {
+		config.setJaxTokenStrategy(new JaxTokenStrategy(128, 4096) {
 			@SuppressWarnings("unchecked")
 			@Override
 			public void markRequestTokenAuthorized(

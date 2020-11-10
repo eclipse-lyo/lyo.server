@@ -1,23 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2012 IBM Corporation.
+/*
+ * Copyright (c) 2012-2019 IBM Corporation and others
  *
- *  All rights reserved. This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License v1.0
- *  and Eclipse Distribution License v. 1.0 which accompanies this distribution.
- *  
- *  The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
- *  and the Eclipse Distribution License is available at
- *  http://www.eclipse.org/org/documents/edl-v10.php.
- *  
- *  Contributors:
- *  
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ *
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
 package org.eclipse.lyo.server.oauth.core.token;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -40,64 +35,7 @@ import net.oauth.OAuthProblemException;
 public class SimpleTokenStrategy implements TokenStrategy {
 	private final static int REQUEST_TOKEN_MAX_ENTIRES = 500;
 	private final static int ACCESS_TOKEN_MAX_ENTRIES = 5000;
-	
-	/**
-	 * Holds information associated with a request token such as the callback
-	 * URL and OAuth verification code.
-	 * 
-	 * @author Samuel Padgett
-	 */
-	protected class RequestTokenData {
-		private String consumerKey;
-		private boolean authorized;
-		private String callback;
-		private String verificationCode;
-		
-		public RequestTokenData(String consumerKey) {
-			this.consumerKey = consumerKey;
-			this.authorized = false;
-			this.callback = null;
-		}
 
-		public RequestTokenData(String consumerKey, String callback) {
-			this.consumerKey = consumerKey;
-			this.authorized = false;
-			this.callback = callback;
-		}
-		
-		public String getConsumerKey() {
-			return consumerKey;
-		}
-		
-		public void setConsumerKey(String consumerKey) {
-			this.consumerKey = consumerKey;
-		}
-		
-		public boolean isAuthorized() {
-			return authorized;
-		}
-		
-		public void setAuthorized(boolean authorized) {
-			this.authorized = authorized;
-		}
-		
-		public String getCallback() {
-			return callback;
-		}
-		
-		public void setCallback(String callback) {
-			this.callback = callback;
-		}
-		
-		public String getVerificationCode() {
-			return verificationCode;
-		}
-		
-		public void setVerificationCode(String verificationCode) {
-			this.verificationCode = verificationCode;
-		}
-	}
-	
 	// key is request token string, value is RequestTokenData
 	private Map<String, RequestTokenData> requestTokens;
 
@@ -137,8 +75,8 @@ public class SimpleTokenStrategy implements TokenStrategy {
 	public void generateRequestToken(OAuthRequest oAuthRequest)
 			throws IOException {
 		OAuthAccessor accessor = oAuthRequest.getAccessor();
-		accessor.requestToken = generateTokenString();
-		accessor.tokenSecret = generateTokenString();
+		accessor.requestToken = StrategyUtil.generateTokenString();
+		accessor.tokenSecret = StrategyUtil.generateTokenString();
 		String callback = oAuthRequest.getMessage()
 				.getParameter(OAuth.OAUTH_CALLBACK);
 		synchronized (requestTokens) {
@@ -177,7 +115,7 @@ public class SimpleTokenStrategy implements TokenStrategy {
 	@Override
 	public String generateVerificationCode(HttpServletRequest httpRequest,
 			String requestToken) throws OAuthProblemException {
-		String verificationCode = generateTokenString();
+		String verificationCode = StrategyUtil.generateTokenString();
 		getRequestTokenData(requestToken).setVerificationCode(verificationCode);
 		
 		return verificationCode;
@@ -217,7 +155,7 @@ public class SimpleTokenStrategy implements TokenStrategy {
 		}
 
 		// Generate a new access token.
-		accessor.accessToken = generateTokenString();
+		accessor.accessToken = StrategyUtil.generateTokenString();
 		synchronized (accessTokens) {
 			accessTokens.put(accessor.accessToken,
 					accessor.consumer.consumerKey);
@@ -225,7 +163,7 @@ public class SimpleTokenStrategy implements TokenStrategy {
 
 		// Remove the old token secret and create a new one for this access
 		// token.
-		accessor.tokenSecret = generateTokenString();
+		accessor.tokenSecret = StrategyUtil.generateTokenString();
 		synchronized (tokenSecrets) {
 			tokenSecrets.remove(requestToken);
 			tokenSecrets.put(accessor.accessToken, accessor.tokenSecret);
@@ -259,15 +197,6 @@ public class SimpleTokenStrategy implements TokenStrategy {
 			}
 			return tokenSecret;
 		}
-	}
-	
-	/**
-	 * Creates a unique, random string to use for tokens.
-	 * 
-	 * @return the random string
-	 */
-	protected String generateTokenString() {
-		return UUID.randomUUID().toString();
 	}
 
 	/**
